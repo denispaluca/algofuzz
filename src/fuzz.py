@@ -5,6 +5,7 @@ from algosdk import (abi)
 from hypothesis import given, settings
 from strategies import get_method_strategy
 from contract import call
+from CoverageHistory import CoverageHistory
 
 def fuzz(contract_path: Path, owner_acc, app_id, evaluate, runs=100):
     contract = abi.Contract.from_json(contract_path.open().read())
@@ -12,21 +13,22 @@ def fuzz(contract_path: Path, owner_acc, app_id, evaluate, runs=100):
         (method, get_method_strategy(method))
         for method in contract.methods
     ]
+    coverage_history = CoverageHistory()
     print(f"Fuzzing contract {contract.name} from account {owner_acc[1]}")
     for i in range(runs):
         method, strategy = random.choice(candidates)
         print(f"Run #{i} executing on method {method.name}: ")
-        run(method, strategy, owner_acc, app_id, evaluate)
+        run(method, strategy, owner_acc, app_id, coverage_history, evaluate)
 
-def run(method: abi.Method, strategy, account, app_id, evaluate: Callable[[str, int], bool]):
+def run(method: abi.Method, strategy, account, app_id, coverage_history, evaluate: Callable[[str, int], bool]):
     @settings(max_examples=10)
     @given(strategy)
     def execute(arg):
         print(f"Calling with {arg}")
-        call_res = call(method, account, app_id, arg)
-        # print(call_res)
+        call_res, coverage = call(method, account, app_id, arg)
+        new_lines_covered = coverage_history.update(coverage)
         eval_res = evaluate(account[1], app_id)
-        assert(eval_res)
+        assert eval_res
 
     try:
         execute()
