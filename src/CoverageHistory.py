@@ -6,9 +6,9 @@ class CoverageHistory:
 
     def update(self, lines: list[int]):
         self.history.append(lines)
-        last_count = self.count()
+        last_covered_lines = self.covered_lines.copy()
         self.covered_lines.update(lines)
-        new_lines_covered = self.count() > last_count
+        new_lines_covered = self.covered_lines - last_covered_lines
 
         return new_lines_covered
 
