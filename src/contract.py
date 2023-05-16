@@ -91,10 +91,12 @@ DictStrInt = dict[Union[str, int], Union[str, int]]
 class ContractAccountState:
     global_state: DictStrInt
     local_state: DictStrInt
+    creator: str
 
     def __init__(self, acc_address: str, app_id: int) -> None:
         data = algod_client.account_application_info(acc_address, app_id)
         app_data = data['created-app']
+        self.creator = data['creator']
 
         if 'global-state' in app_data:
             self.global_state = self.__decode_state(app_data['global-state'])

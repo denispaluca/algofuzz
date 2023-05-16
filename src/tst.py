@@ -10,5 +10,4 @@ algod_token = "a" * 64
 algod_client = algod.AlgodClient(algod_token, algod_address)
 
 info = algod_client.account_application_info("OK7NNBWAABFAZYNSOVMN5KDHHHK6JVVKYUFMDNLVABRFG25UUBPILIAXDY", 42)
-info.get()
 print(info)
