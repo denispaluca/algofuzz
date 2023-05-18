@@ -1,4 +1,4 @@
-from contract import ContractAccountState
+from contract import ContractState
 from abc import ABC, abstractmethod
 
 #class Property(ABC):
@@ -28,11 +28,11 @@ from abc import ABC, abstractmethod
 
 
 def evaluate(account_address: str, app_id: int) -> bool:
-    contract = ContractAccountState(account_address, app_id)
+    contract = ContractState(account_address, app_id)
     
     return count2_always1(contract)
 
-def count2_always1(contract: ContractAccountState) -> bool:
+def count2_always1(contract: ContractState) -> bool:
     key = 'count2'
     if not contract.exists_global(key):
         return False

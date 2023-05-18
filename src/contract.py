@@ -2,7 +2,6 @@ from pathlib import Path
 from algosdk import transaction, account, abi, atomic_transaction_composer, dryrun_results
 import base64
 from utils import get_algod_client, get_accounts
-from typing import Union
 
 algod_client = get_algod_client()
 accounts = get_accounts()
@@ -85,39 +84,55 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
     return result, coverage
 
 
-DictStrInt = dict[Union[str, int], Union[str, int]]
+StateDict = dict[str | int, str | int]
 
 
-class ContractAccountState:
-    global_state: DictStrInt
-    local_state: DictStrInt
-    creator: str
+class ContractState:
+    _global_state: StateDict
+    _local_state: dict[str, StateDict] = {}
+    _global_state_history: list[StateDict] = []
+    _local_state_history: dict[str, list[StateDict]] = {}
+    _creator: str
+    _app_id: int
 
-    def __init__(self, acc_address: str, app_id: int) -> None:
-        data = algod_client.account_application_info(acc_address, app_id)
+    def __init__(self, app_id: int) -> None:
+        self._app_id = app_id
+
+    def load(self, acc_address):
+        data = algod_client.account_application_info(acc_address, self._app_id)
         app_data = data['created-app']
-        self.creator = data['creator']
-
+        self._creator = data['creator']
         if 'global-state' in app_data:
-            self.global_state = self.__decode_state(app_data['global-state'])
-
+            self._global_state = self.__decode_state(app_data['global-state'])
+            self._global_state_history.append(self._global_state)
         if 'local-state' in app_data:
-            self.local_state = self.__decode_state(app_data['local-state'])
+            self._local_state[acc_address] = self.__decode_state(app_data['local-state'])
+            self._local_state_history[acc_address].append(self._local_state[acc_address])
 
     def exists_global(self, key: str) -> bool:
-        return key in self.global_state
+        return key in self._global_state
 
     def get_global(self, key: str) -> str | int:
-        return self.global_state[key]
+        return self._global_state[key]
 
-    def exists_local(self, key: str) -> bool:
-        return key in self.local_state
+    def get_global_history(self):
+        return self._global_state_history.copy()
 
-    def get_local(self, key: str) -> str | int:
-        return self.local_state[key]
+    def exists_local(self, account_address: str, key: str) -> bool:
+        return key in self._local_state[account_address]
 
-    def __decode_state(self, state_object) -> DictStrInt:
-        state_dict: DictStrInt = {}
+    def get_local(self, account_address: str, key: str) -> str | int:
+        return self._local_state[account_address][key]
+
+    def get_local_history(self):
+        return self._local_state_history.copy()
+
+    def get_creator(self):
+        return self._creator
+
+    @staticmethod
+    def __decode_state(state_object) -> StateDict:
+        state_dict: StateDict = {}
         for state in state_object:
             state_value = state['value']
             value = state_value['uint']
