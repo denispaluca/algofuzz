@@ -27,9 +27,7 @@ from abc import ABC, abstractmethod
 #bug_oracle: List[Property]
 
 
-def evaluate(account_address: str, app_id: int) -> bool:
-    contract = ContractState(account_address, app_id)
-    
+def evaluate(exec_account_address: str, contract: ContractState) -> bool:    
     return count2_always1(contract)
 
 def count2_always1(contract: ContractState) -> bool:
