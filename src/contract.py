@@ -101,7 +101,7 @@ class ContractState:
     def load(self, acc_address):
         data = algod_client.account_application_info(acc_address, self._app_id)
         app_data = data['created-app']
-        self._creator = data['creator']
+        self._creator = app_data['creator']
         if 'global-state' in app_data:
             self._global_state = self.__decode_state(app_data['global-state'])
             self._global_state_history.append(self._global_state)

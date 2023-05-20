@@ -35,10 +35,7 @@ def count2_always1(contract: ContractState) -> bool:
     if not contract.exists_global(key):
         return False
     
-
     count2 = contract.get_global(key)
-
-    
     cond = count2 == 1
 
     if not cond:
