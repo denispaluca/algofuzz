@@ -2,7 +2,7 @@ from pathlib import Path
 import random
 from typing import Callable
 from algosdk import (abi)
-from hypothesis import given, settings
+from hypothesis import given, settings, target
 from strategies import get_method_strategy
 from contract import call, ContractState
 from CoverageHistory import CoverageHistory
@@ -33,6 +33,17 @@ def run(method: abi.Method, strategy, account, app_id, coverage_history, contrac
         new_lines_covered = coverage_history.update(coverage)
         contract_state.load(account[1])
         eval_res = evaluate(account[1], contract_state)
+
+        # TARGETS
+        # Coverage Guided
+        # Can also target the length of new lines
+        # target(len(new_lines_covered)
+        target(coverage_history.count())
+
+        # State Guided
+        target(contract_state.get_unique_global_state_count())
+        target(contract_state.get_unique_local_state_count())
+
         assert eval_res
 
     try:

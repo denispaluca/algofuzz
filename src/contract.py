@@ -130,6 +130,15 @@ class ContractState:
     def get_creator(self):
         return self._creator
 
+    def get_unique_global_state_count(self):
+        return len(set(self._global_state_history))
+
+    def get_unique_local_state_count(self):
+        result = 0
+        for val in self._local_state_history.values():
+            result += len(set(val))
+        return result
+
     @staticmethod
     def __decode_state(state_object) -> StateDict:
         state_dict: StateDict = {}
