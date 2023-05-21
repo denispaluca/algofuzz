@@ -1,6 +1,7 @@
 from algosdk.abi import *
 from hypothesis import strategies as st
 
+
 def get_strategy(arg: ABIType):
     if isinstance(arg, UintType):
         return st.integers(
@@ -30,10 +31,7 @@ def get_strategy(arg: ABIType):
         return st.tuples(*item_strats)
     else:
         return st.text()
-    
+
+
 def get_method_strategy(method: Method):
-    # argument_strats = {}
-    # for arg in method.args:
-    #     strat = get_strategy(arg.type)
-    #     argument_strats[arg.name] = strat
     return st.tuples(*[get_strategy(arg.type) for arg in method.args])
