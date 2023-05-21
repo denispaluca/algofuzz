@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from typing import Any
 from contract import deploy
-from fuzz import fuzz
+from fuzz import fuzz, fuzz2
 from property_test import evaluate
 
 def main(*args: Any, **kwds: Any) -> Any:
@@ -48,7 +48,7 @@ def main(*args: Any, **kwds: Any) -> Any:
         raise SystemExit(1)
     
     app_id, owner_acc = deploy(approval_path, clear_path, args.schema)
-    fuzz(contract_path, owner_acc, app_id, evaluate)
+    fuzz2(contract_path, owner_acc, app_id, evaluate)
 
     
 
