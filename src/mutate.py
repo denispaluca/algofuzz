@@ -1,4 +1,5 @@
 import random
+from algosdk.abi import *
 
 # uintN mutator
 class UintMutator:
@@ -114,3 +115,91 @@ class ByteMutator(UintMutator):
     def __init__(self) -> None:
         super().__init__(8)
 
+class BoolMutator:
+    def mutate(self, value: bool):
+        return not value
+
+class ArrayMutator:
+    def __init__(self, arg: ArrayDynamicType):
+        self.min = 0
+        self.max = 2048 // arg.child_type.byte_len()
+        self.mutator = get_mutator(arg.child_type)
+        self.mutations = [
+            self.add_element,
+            self.remove_element,
+            self.flip_element,
+        ]
+
+    def add_element(self, value: list):
+        if(len(value) == self.max):
+            return self.remove_element(value)
+
+        index = random.randint(0, len(value))
+        return value[:index] + [self.mutator.mutate(value[index])] + value[index:]
+    
+    def remove_element(self, value: list):
+        if(len(value) == self.min):
+            return self.add_element(value)
+
+        index = random.randint(0, len(value) - 1)
+        return value[:index] + value[index + 1:]
+    
+    def flip_element(self, value: list):
+        if(len(value) == 0):
+            return self.add_element(value)
+
+        index = random.randint(0, len(value) - 1)
+        return value[:index] + [self.mutator.mutate(value[index])] + value[index + 1:]
+    
+    def mutate(self, value: list):
+        mutation = random.choice(self.mutations)
+        return mutation(value)
+    
+
+class ArrayStaticMutator(ArrayMutator):
+    def __init__(self, arg: ArrayStaticType):
+        super().__init__(arg)
+        self.max = arg.static_length
+        self.min = arg.static_length
+    
+    def mutate(self, value: list):
+        return super().flip_element(value)
+    
+class TupleMutator:
+    def __init__(self, args: TupleType):
+        self.args = args
+        self.mutators = [get_mutator(arg.type) for arg in args.child_types]
+
+def get_mutator(arg: ABIType):
+    if isinstance(arg, UintType):
+        return UintMutator(arg.bit_size)
+    elif isinstance(arg, UfixedType):
+        return UFixedMutator(arg.bit_size, arg.precision)
+    elif isinstance(arg, BoolType):
+        return BoolMutator()
+    elif isinstance(arg, StringType):
+        return StringMutator()
+    elif isinstance(arg, ByteType):
+        return ByteMutator()
+    elif isinstance(arg, ArrayDynamicType):
+        return ArrayMutator(arg)
+    elif isinstance(arg, ArrayStaticType):
+        return ArrayMutator(arg)
+    elif isinstance(arg, TupleType):
+        return TupleMutator(arg)
+    else:
+        return UintMutator(256)
+    
+
+class MethodMutator:
+    def __init__(self, method: Method) -> None:
+        self._mutators = [get_mutator(arg.type) for arg in method.args]
+        
+    def mutate(self, previous_args: list):
+        return [
+            mutator.mutate(arg) 
+            for mutator, arg 
+            in zip(self._mutators, previous_args)
+        ]
+
+    

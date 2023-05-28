@@ -25,7 +25,7 @@ def compile_program(source_path: Path):
     return base64.b64decode(compile_response['result'])
 
 
-def deploy(approval_path: Path, clear_path: Path, schema: list[int]):
+def deploy(approval_path: Path, clear_path: Path, schema: list[int]) -> tuple[int, tuple[str, str]]:
     owner_acc = account.generate_account()
     private_key, address = owner_acc
     dispense(address)
