@@ -3,6 +3,7 @@ from algosdk.abi import *
 
 # uintN mutator
 class UintMutator:
+    seed = 0
     min = 0
     def __init__(self, N: int = 64):
         self.N = N # bit size
@@ -67,7 +68,6 @@ class UintMutator:
 
 # ufixedNxM mutator
 class UFixedMutator(UintMutator):
-
     def __init__(self, N: int, M: int):
         super().__init__(N)
         self.M = M
@@ -79,7 +79,7 @@ class UFixedMutator(UintMutator):
         return super().mutate(int(value * self.multiplier)) / self.multiplier
     
 class StringMutator:
-
+    seed = ""
     def __init__(self, max = 256) -> None:
         self.max = max # max length of string
         self.mutations = [
@@ -116,10 +116,12 @@ class ByteMutator(UintMutator):
         super().__init__(8)
 
 class BoolMutator:
+    seed = False
     def mutate(self, value: bool):
         return not value
 
 class ArrayMutator:
+    seed = []
     def __init__(self, arg: ArrayDynamicType):
         self.min = 0
         self.max = 2048 // arg.child_type.byte_len()
@@ -161,14 +163,23 @@ class ArrayStaticMutator(ArrayMutator):
         super().__init__(arg)
         self.max = arg.static_length
         self.min = arg.static_length
+        self.seed = [self.mutator.seed for _ in range(arg.static_length)]
     
     def mutate(self, value: list):
         return super().flip_element(value)
     
 class TupleMutator:
     def __init__(self, args: TupleType):
+        self.seed = [get_mutator(arg.type).seed for arg in args.child_types]
         self.args = args
         self.mutators = [get_mutator(arg.type) for arg in args.child_types]
+
+    def mutate(self, value: list):
+        return [
+            mutator.mutate(arg) 
+            for mutator, arg 
+            in zip(self.mutators, value)
+        ]
 
 def get_mutator(arg: ABIType):
     if isinstance(arg, UintType):
