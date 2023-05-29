@@ -87,6 +87,10 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
 StateDict = dict[str | int, str | int]
 
 
+def dict_list_to_set(dict_list: list[dict]) -> set[dict]:
+    return set([frozenset(d.items()) for d in dict_list])
+
+
 class ContractState:
     _global_state: StateDict
     _local_state: dict[str, StateDict] = {}
@@ -131,12 +135,12 @@ class ContractState:
         return self._creator
 
     def count_unique_global_states(self):
-        return len(set(self._global_state_history))
+        return len(dict_list_to_set(self._global_state_history))
 
     def count_unique_local_states(self):
         result = 0
         for val in self._local_state_history.values():
-            result += len(set(val))
+            result += len(dict_list_to_set(val))
         return result
 
     @staticmethod
