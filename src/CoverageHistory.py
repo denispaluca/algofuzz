@@ -1,8 +1,9 @@
 
 
 class CoverageHistory:
-    history: list[list[int]] = []
-    covered_lines: set[int] = set()
+    def __init__(self):
+        self.history: list[list[int]] = []
+        self.covered_lines: set[int] = set()
 
     def update(self, lines: list[int]):
         self.history.append(lines)
