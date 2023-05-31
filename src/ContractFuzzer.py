@@ -99,7 +99,13 @@ class ContractFuzzer:
         self.contract_state = ContractState(self.app_id)
         self.contract_state.load(self.owner_acc[1])
 
-        self._fuzz(eval, runs)
+        print(f"Fuzzing contract {self.abi.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
+
+        try:
+            self._fuzz(eval, runs)
+        except AssertionError:
+            print("EVALUATION FAILED")
+            exit()
 
     def _call(self, method: abi.Method, args):
         res, cov = call(method, self.owner_acc, self.app_id, args)
