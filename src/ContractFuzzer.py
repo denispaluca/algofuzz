@@ -96,7 +96,7 @@ class MethodFuzzer:
             candidate = self.mutator.mutate(candidate)
         return candidate
     
-    def update(self, coverage: set[int], new_lines_covered) -> None:
+    def update(self, coverage: set[int], new_lines_covered: set[int]) -> None:
         self.schedule.addPath(coverage)
 
         if len(new_lines_covered) > 0:
