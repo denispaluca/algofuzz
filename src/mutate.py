@@ -136,6 +136,11 @@ class ArrayMutator:
             self.remove_element,
             self.flip_element,
         ]
+        self.counts = {
+            "add": 0,
+            "remove": 0,
+            "flip": 0
+        }
 
     def seed(self):
         return []
@@ -144,6 +149,7 @@ class ArrayMutator:
         if(len(value) == self.max):
             return self.remove_element(value)
 
+        self.counts["add"] += 1
         index = random.randint(0, len(value))
         return value[:index] + [self.mutator.mutate(self.mutator.seed())] + value[index:]
     
@@ -151,6 +157,7 @@ class ArrayMutator:
         if(len(value) == self.min):
             return self.add_element(value)
 
+        self.counts["remove"] += 1
         index = random.randint(0, len(value) - 1)
         return value[:index] + value[index + 1:]
     
@@ -158,6 +165,7 @@ class ArrayMutator:
         if(len(value) == 0):
             return self.add_element(value)
 
+        self.counts["flip"] += 1
         index = random.randint(0, len(value) - 1)
         return value[:index] + [self.mutator.mutate(value[index])] + value[index + 1:]
     
