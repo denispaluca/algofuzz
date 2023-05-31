@@ -145,7 +145,7 @@ class ArrayMutator:
             return self.remove_element(value)
 
         index = random.randint(0, len(value))
-        return value[:index] + [self.mutator.mutate(value[index])] + value[index:]
+        return value[:index] + [self.mutator.mutate(self.mutator.seed())] + value[index:]
     
     def remove_element(self, value: list):
         if(len(value) == self.min):
