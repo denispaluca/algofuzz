@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 from typing import Any
-from ContractFuzzer import ContractFuzzer
+from ContractFuzzer import ContractFuzzer, TotalContractFuzzer
 from contract import deploy
 from fuzz import fuzz, fuzz2
 from property_test import evaluate
@@ -48,7 +48,7 @@ def main(*args: Any, **kwds: Any) -> Any:
         print("Path to contract ABI is wrong")
         raise SystemExit(1)
     
-    fuzzer = ContractFuzzer(approval_path, clear_path, contract_path, args.schema)
+    fuzzer = TotalContractFuzzer(approval_path, clear_path, contract_path, args.schema)
     fuzzer.start(evaluate, 1000)
     # app_id, owner_acc = deploy(approval_path, clear_path, args.schema)
     # fuzz2(contract_path, owner_acc, app_id, evaluate)
