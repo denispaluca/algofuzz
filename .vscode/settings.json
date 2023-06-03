@@ -1,0 +1,10 @@
+{
+    "editor.semanticTokenColorCustomizations": {
+        "[Default Dark Modern]": {
+            "rules": {
+                "selfParameter": "#569CD6",
+                "clsParameter": "#569CD6"
+            },
+        },
+    }
+}
