@@ -79,8 +79,12 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
         for line in lines:
             coverage.append(line['line'])
 
-    txid = algod_client.send_transactions(txns)
-    result = transaction.wait_for_confirmation(algod_client, txid, 0)
+    try:
+        txid = algod_client.send_transactions(txns)
+        result = transaction.wait_for_confirmation(algod_client, txid, 0)
+    except Exception as e:
+        return None, coverage
+    
     return result, coverage
 
 
