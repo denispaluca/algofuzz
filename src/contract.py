@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Type
 from algosdk import transaction, account, abi, atomic_transaction_composer, dryrun_results
 import base64
 from utils import get_algod_client, get_accounts
@@ -87,13 +88,19 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
 StateDict = dict[str | int, str | int]
 
 
+def hash_dict(d: dict):
+    return frozenset(d.items())
+
 def dict_list_to_set(dict_list: list[dict]) -> set[dict]:
     return set([frozenset(d.items()) for d in dict_list])
 
+StateTransition = Type[tuple[StateDict, tuple[str, list], StateDict]]
 
 class ContractState:
     _global_state: StateDict
     _local_state: dict[str, StateDict] = {}
+    _global_transitions: set[StateTransition] = set()
+    _unique_global_states: set[frozenset] = set()
     _global_state_history: list[StateDict] = []
     _local_state_history: dict[str, list[StateDict]] = {}
     _creator: str
