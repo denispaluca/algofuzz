@@ -5,10 +5,10 @@ import random
 import time
 from typing import Any, Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
-from CoverageHistory import CoverageHistory
+from src.CoverageHistory import CoverageHistory
 
-from contract import ContractState, call, deploy
-from mutate import MethodMutator
+from src.contract import ContractState, call, deploy
+from src.mutate import MethodMutator
 
 class Seed:
     """Represent an input with additional attributes"""

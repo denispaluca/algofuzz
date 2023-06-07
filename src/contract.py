@@ -1,7 +1,7 @@
 from pathlib import Path
 from algosdk import transaction, account, abi, atomic_transaction_composer, dryrun_results
 import base64
-from utils import get_algod_client, get_accounts
+from src.utils import get_algod_client, get_accounts
 
 algod_client = get_algod_client()
 accounts = get_accounts()
@@ -71,10 +71,16 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
     dryrun_request = transaction.create_dryrun(algod_client, txns)
     dryrun_result = algod_client.dryrun(dryrun_request)
     dryrun_txns = dryrun_result['txns']
+
+
     # drr = dryrun_results.DryrunResponse(dryrun_result)
 
     coverage: list[int] = []
     for txn in dryrun_txns:
+        msgs = txn['app-call-messages']
+        if any([msg == 'REJECTED' for msg in msgs]):
+            return None, coverage
+        
         lines = txn['app-call-trace']
         for line in lines:
             coverage.append(line['line'])
