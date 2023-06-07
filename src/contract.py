@@ -1,5 +1,4 @@
-from pathlib import Path
-from algosdk import transaction, account, abi, atomic_transaction_composer, dryrun_results
+from algosdk import transaction, account, abi, atomic_transaction_composer
 import base64
 from src.utils import get_algod_client, get_accounts
 
@@ -56,12 +55,12 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
     atc = atomic_transaction_composer.AtomicTransactionComposer()
     tx_signer = atomic_transaction_composer.AccountTransactionSigner(private_key)
     atc.add_method_call(
-        app_id,
-        method,
-        address,
-        sp,
-        tx_signer,
-        args
+        app_id= app_id,
+        method= method,
+        sender= address,
+        sp= sp,
+        signer= tx_signer,
+        method_args= args
     )
     txns = atc.gather_signatures()
 

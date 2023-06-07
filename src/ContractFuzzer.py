@@ -129,7 +129,7 @@ class ContractFuzzer:
         self.owner_acc = None
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
-        self.app_id, self.owner_acc = deploy(self.approval, self.clear_path, self.schema)
+        self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
         self.contract_state = ContractState(self.app_id)
         self.contract_state.load(self.owner_acc[1])
 
