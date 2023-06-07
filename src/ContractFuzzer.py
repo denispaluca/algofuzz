@@ -171,8 +171,8 @@ class TotalContractFuzzer:
         self.app_id = None
         self.owner_acc = None
 
-        self.method_mutators = {method.name: MethodMutator(method) for method in self.abi.methods}
-        self.seeds = [(method.name, self.method_mutators[method.name].seed()) for method in self.abi.methods]
+        self.method_mutators = {method.name: MethodMutator(method) for method in self.contract.methods}
+        self.seeds = [(method.name, self.method_mutators[method.name].seed()) for method in self.contract.methods]
         self.seed_index = 0
         self.population: list[Seed] = []
         self.inputs = []
@@ -209,11 +209,11 @@ class TotalContractFuzzer:
     
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
-        self.app_id, self.owner_acc = deploy(self.approval_path, self.clear_path, self.schema)
+        self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
         self.contract_state = ContractState(self.app_id)
         self.contract_state.load(self.owner_acc[1])
 
-        print(f"Fuzzing contract {self.abi.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
+        print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
 
         try:
             for _ in range(runs):
@@ -231,7 +231,7 @@ class TotalContractFuzzer:
     def _call(self):
         method_name, args = self.fuzz()
         print(f"Calling {method_name} with {args}")
-        method = self.abi.get_method_by_name(method_name)
+        method = self.contract.get_method_by_name(method_name)
         res, cov = call(method, self.owner_acc, self.app_id, args)
         new_lines_covered = self.coverage.update(cov)
 

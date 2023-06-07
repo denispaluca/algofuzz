@@ -1,4 +1,5 @@
 from pyteal import *
+from json import dumps
 
 
 handle_creation = Seq(
@@ -53,21 +54,8 @@ def baz(a: abi.Uint64, b: abi.Uint64, c: abi.Uint64):
         )
     )
 
+schema = (5,0,0,0)
 
-if __name__ == "__main__":
-    import os
-    import json
-
-    path = os.path.dirname(os.path.abspath(__file__))
+def compile():
     approval, clear, contract = router.compile_program(version=8)
-
-    # Dump out the contract as json that can be read in by any of the SDKs
-    with open(os.path.join(path, "artifacts/contract.json"), "w") as f:
-        f.write(json.dumps(contract.dictify(), indent=2))
-
-    # Write out the approval and clear programs
-    with open(os.path.join(path, "artifacts/approval.teal"), "w") as f:
-        f.write(approval)
-
-    with open(os.path.join(path, "artifacts/clear.teal"), "w") as f:
-        f.write(clear)
+    return approval, clear, dumps(contract.dictify()), schema
