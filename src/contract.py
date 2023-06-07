@@ -17,21 +17,18 @@ def dispense(addr):
     transaction.wait_for_confirmation(algod_client, txid, 4)
 
 
-def compile_program(source_path: Path):
-    with open(source_path) as f:
-        source_file = f.read()
-
-    compile_response = algod_client.compile(source_file)
+def compile_program(source: str):
+    compile_response = algod_client.compile(source)
     return base64.b64decode(compile_response['result'])
 
 
-def deploy(approval_path: Path, clear_path: Path, schema: list[int]) -> tuple[int, tuple[str, str]]:
+def deploy(approval: str, clear: str, schema: list[int]) -> tuple[int, tuple[str, str]]:
     owner_acc = account.generate_account()
     private_key, address = owner_acc
     dispense(address)
 
-    approval_program = compile_program(approval_path)
-    clear_program = compile_program(clear_path)
+    approval_program = compile_program(approval)
+    clear_program = compile_program(clear)
 
     global_schema = transaction.StateSchema(num_uints=schema[0], num_byte_slices=schema[1])
     local_schema = transaction.StateSchema(num_uints=schema[2], num_byte_slices=schema[3])

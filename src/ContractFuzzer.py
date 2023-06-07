@@ -117,23 +117,23 @@ class MethodFuzzer:
         return self.inp
 
 class ContractFuzzer:
-    def __init__(self, approval_path: Path, clear_path: Path, abi_path: Path, schema: tuple[int,int,int,int]):
-        self.approval_path = approval_path
-        self.clear_path = clear_path
+    def __init__(self, approval: str, clear: str, contract:str, schema: tuple[int,int,int,int]):
+        self.approval = approval
+        self.clear = clear
         self.schema = schema
-        self.abi = abi.Contract.from_json(abi_path.open().read())
+        self.contract = abi.Contract.from_json(contract)
 
-        self.method_fuzzers = {method.name: MethodFuzzer(method) for method in self.abi.methods}
+        self.method_fuzzers = {method.name: MethodFuzzer(method) for method in self.contract.methods}
         self.coverage = CoverageHistory()
         self.app_id = None
         self.owner_acc = None
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
-        self.app_id, self.owner_acc = deploy(self.approval_path, self.clear_path, self.schema)
+        self.app_id, self.owner_acc = deploy(self.approval, self.clear_path, self.schema)
         self.contract_state = ContractState(self.app_id)
         self.contract_state.load(self.owner_acc[1])
 
-        print(f"Fuzzing contract {self.abi.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
+        print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
 
         try:
             self._fuzz(eval, runs)
@@ -152,7 +152,7 @@ class ContractFuzzer:
             
     def _fuzz(self, eval: Callable[[str, ContractState], bool], runs: int = 1000):
         for _ in range(runs):
-            method = random.choice(self.abi.methods)
+            method = random.choice(self.contract.methods)
             self._fuzz_method(method)
             self.contract_state.load(self.owner_acc[1])
             res = eval(self.owner_acc[1], self.contract_state)
@@ -161,11 +161,11 @@ class ContractFuzzer:
 
     
 class TotalContractFuzzer:
-    def __init__(self, approval_path: Path, clear_path: Path, abi_path: Path, schema: tuple[int,int,int,int]):
-        self.approval_path = approval_path
-        self.clear_path = clear_path
+    def __init__(self, approval: str, clear: str, contract:str, schema: tuple[int,int,int,int]):
+        self.approval = approval
+        self.clear = clear
         self.schema = schema
-        self.abi = abi.Contract.from_json(abi_path.open().read())
+        self.contract = abi.Contract.from_json(contract)
 
         self.coverage = CoverageHistory()
         self.app_id = None

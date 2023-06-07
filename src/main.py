@@ -1,18 +1,18 @@
 import argparse
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 from ContractFuzzer import ContractFuzzer, TotalContractFuzzer
 from contract import deploy
 from fuzz import fuzz, fuzz2
 from property_test import evaluate
 
 def main(*args: Any, **kwds: Any) -> Any:
-    approval_path, clear_path, contract_path, schema = parse_args()
+    approval, clear, contract, schema = parse_args()
     
-    fuzzer = TotalContractFuzzer(approval_path, clear_path, contract_path, schema)
+    fuzzer = TotalContractFuzzer(approval, clear, contract, schema)
     fuzzer.start(evaluate, 10000)
 
-def parse_args() -> Tuple[Path, Path, Path, Tuple[int, int, int, int]]:
+def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:
     parser = argparse.ArgumentParser(description='Fuzzer for Algorand smart contracts')
     parser.add_argument(
         'approval', 
@@ -54,7 +54,16 @@ def parse_args() -> Tuple[Path, Path, Path, Tuple[int, int, int, int]]:
         print("Path to contract ABI is wrong")
         raise SystemExit(1)
     
-    return approval_path,clear_path,contract_path, args.schema
+    with open(approval_path) as f:
+        approval = f.read()
+    
+    with open(clear_path) as f:
+        clear = f.read()
+
+    with open(contract_path) as f:
+        contract = f.read()
+    
+    return approval, clear, contract, args.schema
 
     
 
