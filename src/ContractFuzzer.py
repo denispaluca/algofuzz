@@ -7,8 +7,9 @@ from typing import Any, Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
 from src.CoverageHistory import CoverageHistory
 
-from src.contract import ContractState, call, deploy
+from src.contract import ContractState, call, deploy, opt_in
 from src.mutate import MethodMutator
+from src.utils import get_account_balance
 
 class Seed:
     """Represent an input with additional attributes"""
@@ -76,9 +77,9 @@ class PowerSchedule:
 
 
 class MethodFuzzer:
-    def __init__(self, method: abi.Method):
+    def __init__(self, method: abi.Method, max_micro_algo: int):
         self.method = method
-        self.mutator = MethodMutator(method)
+        self.mutator = MethodMutator(method, max_micro_algo)
         self.seeds = [self.mutator.seed()]
         self.seed_index = 0
         self.population = []
@@ -123,15 +124,18 @@ class ContractFuzzer:
         self.schema = schema
         self.contract = abi.Contract.from_json(contract)
 
-        self.method_fuzzers = {method.name: MethodFuzzer(method) for method in self.contract.methods}
         self.coverage = CoverageHistory()
         self.app_id = None
         self.owner_acc = None
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
         self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
+        opt_in(self.owner_acc, self.app_id)
         self.contract_state = ContractState(self.app_id)
         self.contract_state.load(self.owner_acc[1])
+
+
+        self.method_fuzzers = {method.name: MethodFuzzer(method, get_account_balance(self.owner_acc[1])) for method in self.contract.methods}
 
         print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
 

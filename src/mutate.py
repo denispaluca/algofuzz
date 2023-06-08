@@ -192,8 +192,24 @@ class TupleMutator:
             for mutator, arg 
             in zip(self.mutators, value)
         ]
+    
+class PaymentObject:
+    def __init__(self, amount: int) -> None:
+        self.amount = amount
 
-def get_mutator(arg: ABIType):
+class PaymentMutator:
+    def __init__(self, max_amount) -> None:
+        self.max = max_amount
+
+    def seed(self):
+        return PaymentObject(0)
+    
+    def mutate(self, value: PaymentObject):
+        value.amount = random.randint(0, self.max)
+        return value
+
+
+def get_mutator(arg: ABIType | str, max_micro_algo: int):
     if isinstance(arg, UintType):
         return UintMutator(arg.bit_size)
     elif isinstance(arg, UfixedType):
@@ -210,13 +226,15 @@ def get_mutator(arg: ABIType):
         return ArrayMutator(arg)
     elif isinstance(arg, TupleType):
         return TupleMutator(arg)
+    elif arg == 'pay':
+        return PaymentMutator(max_micro_algo)
     else:
         return UintMutator(256)
     
 
 class MethodMutator:
-    def __init__(self, method: Method) -> None:
-        self._mutators = [get_mutator(arg.type) for arg in method.args]
+    def __init__(self, method: Method, max_micro_algo: int) -> None:
+        self._mutators = [get_mutator(arg.type, max_micro_algo) for arg in method.args]
         
     def seed(self):
         return [mutator.seed() for mutator in self._mutators]

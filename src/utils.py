@@ -3,7 +3,7 @@ import base64
 from dataclasses import dataclass
 from typing import List
 
-from algosdk import transaction
+from algosdk import transaction, logic
 from algosdk.v2client import algod, indexer
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
@@ -109,3 +109,21 @@ def get_accounts(
         kmd.release_wallet_handle(wallet_handle)
 
     return kmd_accounts
+
+
+def get_account_balance(
+    address: str,
+    algod_address: str = ALGOD_URL,
+    algod_token: str = ALGOD_TOKEN,
+) -> int:
+    """returns the balance of an account"""
+    algod_client = algod.AlgodClient(algod_token, algod_address)
+    account_info = algod_client.account_info(address)
+    return account_info.get("amount")
+
+
+def get_application_address(
+    app_id: int
+) -> str:
+    """returns the address of an application given its id"""
+    return logic.get_application_address(app_id)

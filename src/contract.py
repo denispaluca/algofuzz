@@ -1,6 +1,7 @@
-from algosdk import transaction, account, abi, atomic_transaction_composer
+from algosdk import transaction, account, abi, atomic_transaction_composer, logic
 import base64
-from src.utils import get_algod_client, get_accounts
+from src.mutate import PaymentObject
+from src.utils import get_algod_client, get_accounts, get_application_address
 
 algod_client = get_algod_client()
 accounts = get_accounts()
@@ -49,18 +50,28 @@ def deploy(approval: str, clear: str, schema: list[int]) -> tuple[int, tuple[str
     return result['application-index'], owner_acc
 
 
-def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
+def call(method: abi.Method, acc: tuple[str, str], app_id: int, args: list):
     private_key, address = acc
     sp = algod_client.suggested_params()
     atc = atomic_transaction_composer.AtomicTransactionComposer()
+
     tx_signer = atomic_transaction_composer.AccountTransactionSigner(private_key)
+    args_with_payments = []
+    for arg in args:
+        if not isinstance(arg, PaymentObject):
+            args_with_payments.append(arg)
+            continue
+
+        payment = transaction.PaymentTxn(address, sp, logic.get_application_address(app_id), arg.amount)
+        args_with_payments.append(atomic_transaction_composer.TransactionWithSigner(payment, tx_signer))
+
     atc.add_method_call(
         app_id= app_id,
         method= method,
         sender= address,
         sp= sp,
         signer= tx_signer,
-        method_args= args
+        method_args= args_with_payments
     )
     txns = atc.gather_signatures()
 
@@ -73,6 +84,9 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
 
     coverage: list[int] = []
     for txn in dryrun_txns:
+        if not ('app-call-messages' in txn or 'app-call-trace' in txn):
+            continue
+        
         msgs = txn['app-call-messages']
         if any([msg == 'REJECTED' for msg in msgs]):
             return None, coverage
@@ -89,6 +103,15 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args):
     
     return result, coverage
 
+def opt_in(acc: tuple[str, str], app_id: int):
+    private_key, address = acc
+    sp = algod_client.suggested_params()
+    optin_tx = transaction.ApplicationOptInTxn(address, sp, app_id)
+    signed_tx = optin_tx.sign(private_key)
+    txid = algod_client.send_transaction(signed_tx)
+    result = transaction.wait_for_confirmation(algod_client, txid)
+    return result
+
 
 StateDict = dict[str | int, str | int]
 
@@ -98,25 +121,27 @@ def dict_list_to_set(dict_list: list[dict]) -> set[dict]:
 
 
 class ContractState:
-    _global_state: StateDict
-    _local_state: dict[str, StateDict] = {}
-    _global_state_history: list[StateDict] = []
-    _local_state_history: dict[str, list[StateDict]] = {}
-    _creator: str
-    _app_id: int
-
     def __init__(self, app_id: int) -> None:
         self._app_id = app_id
+        self._address = get_application_address(app_id)
+        self._global_state: StateDict = {}
+        self._local_state: dict[str, StateDict] = {}
+        self._global_state_history: list[StateDict] = []
+        self._local_state_history: dict[str, list[StateDict]] = {}
+        self._creator: str = None
 
     def load(self, acc_address):
         data = algod_client.account_application_info(acc_address, self._app_id)
         app_data = data['created-app']
         self._creator = app_data['creator']
+
         if 'global-state' in app_data:
             self._global_state = self.__decode_state(app_data['global-state'])
             self._global_state_history.append(self._global_state)
-        if 'local-state' in app_data:
-            self._local_state[acc_address] = self.__decode_state(app_data['local-state'])
+        if 'app-local-state' in data:
+            self._local_state[acc_address] = self.__decode_state(data['app-local-state'])
+            if(acc_address not in self._local_state_history):
+                self._local_state_history[acc_address] = []
             self._local_state_history[acc_address].append(self._local_state[acc_address])
 
     def exists_global(self, key: str) -> bool:
@@ -152,7 +177,7 @@ class ContractState:
     @staticmethod
     def __decode_state(state_object) -> StateDict:
         state_dict: StateDict = {}
-        for state in state_object:
+        for state in state_object['key-value']:
             state_value = state['value']
             value = state_value['uint']
             if state_value['type'] != 2:
