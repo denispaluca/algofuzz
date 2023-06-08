@@ -86,7 +86,7 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args: list):
     for txn in dryrun_txns:
         if not ('app-call-messages' in txn or 'app-call-trace' in txn):
             continue
-        
+
         msgs = txn['app-call-messages']
         if any([msg == 'REJECTED' for msg in msgs]):
             return None, coverage
@@ -131,18 +131,37 @@ class ContractState:
         self._creator: str = None
 
     def load(self, acc_address):
-        data = algod_client.account_application_info(acc_address, self._app_id)
-        app_data = data['created-app']
-        self._creator = app_data['creator']
+        self._load_global()
+        self._load_local(acc_address)
+        
+    def _load_global(self):
+        app_info = algod_client.application_info(self._app_id)
+        params: dict = app_info.get('params')
+        if not params:
+            return
+        
+        self._creator = params.get('creator')
+        global_state = params.get('global-state')
+        if not global_state:
+            return
+        
+        self._global_state = self.__decode_state(global_state)
+        self._global_state_history.append(self._global_state)
 
-        if 'global-state' in app_data:
-            self._global_state = self.__decode_state(app_data['global-state'])
-            self._global_state_history.append(self._global_state)
-        if 'app-local-state' in data:
-            self._local_state[acc_address] = self.__decode_state(data['app-local-state'])
-            if(acc_address not in self._local_state_history):
-                self._local_state_history[acc_address] = []
-            self._local_state_history[acc_address].append(self._local_state[acc_address])
+    def _load_local(self, acc_address: str):
+        account_info = algod_client.account_application_info(acc_address, self._app_id)
+        data: dict = account_info.get('app-local-state')
+        if not data:
+            return
+        
+        local_state = data.get('key-value')
+        if not local_state:
+            return
+        
+        self._local_state[acc_address] = self.__decode_state(local_state)
+        if(acc_address not in self._local_state_history):
+            self._local_state_history[acc_address] = []
+        self._local_state_history[acc_address].append(self._local_state[acc_address])
 
     def exists_global(self, key: str) -> bool:
         return key in self._global_state
@@ -177,7 +196,7 @@ class ContractState:
     @staticmethod
     def __decode_state(state_object) -> StateDict:
         state_dict: StateDict = {}
-        for state in state_object['key-value']:
+        for state in state_object:
             state_value = state['value']
             value = state_value['uint']
             if state_value['type'] != 2:
