@@ -88,7 +88,7 @@ def call(method: abi.Method, acc: tuple[str, str], app_id: int, args: list):
             continue
 
         msgs = txn['app-call-messages']
-        if any([msg == 'REJECTED' for msg in msgs]):
+        if any([msg == 'REJECT' for msg in msgs]):
             return None, coverage
         
         lines = txn['app-call-trace']

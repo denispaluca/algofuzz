@@ -27,10 +27,9 @@ router = Router(
 def buyTokens(payment: abi.PaymentTransaction):
     tokens = ScratchVar(TealType.uint64)
     return Seq(
-        Assert(payment.get().amount() > Int(0)),
         Assert(payment.get().receiver() == Global.current_application_address()),
         Assert(payment.get().close_remainder_to() == Global.zero_address()),
-        tokens.store(payment.get().amount() / microAlgosPerAlgo * tokensPerAlgo),
+        tokens.store((payment.get().amount() / microAlgosPerAlgo) * tokensPerAlgo),
         App.localPut(Int(0), balance, App.localGet(Int(0), balance) + tokens.load()),
 
         Approve()
@@ -39,13 +38,12 @@ def buyTokens(payment: abi.PaymentTransaction):
 @router.method
 def sellTokens(tokens: abi.Uint64):
     return Seq(
-        Assert(tokens.get() > Int(0)),
         Assert(tokens.get() <= App.localGet(Int(0), balance)),
         App.localPut(Int(0), balance, App.localGet(Int(0), balance) - tokens.get()),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.Payment,
-            TxnField.amount: tokens.get() * microAlgosPerAlgo / tokensPerAlgo,
+            TxnField.amount: (tokens.get() * tokensPerAlgo) / microAlgosPerAlgo,
             TxnField.receiver: Txn.sender(),
         }),
         InnerTxnBuilder.Submit(),
