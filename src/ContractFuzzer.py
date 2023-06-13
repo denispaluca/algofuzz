@@ -143,11 +143,7 @@ class ContractFuzzer:
 
         print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
 
-        try:
-            self._fuzz(eval, runs)
-        except AssertionError as e:
-            print("EVALUATION FAILED")
-            exit()
+        return self._fuzz(eval, runs)
     
     def _fuzz_method(self, method: abi.Method):
         print(f"Calling {method.name} with input:")
@@ -159,14 +155,15 @@ class ContractFuzzer:
         new_lines_covered = self.coverage.update(cov)
         method_fuzzer.update(set(cov), new_lines_covered)
             
-    def _fuzz(self, eval: Callable[[str, ContractState], bool], runs: int = 1000):
-        for _ in range(runs):
+    def _fuzz(self, eval: Callable[[str, ContractState], bool], runs: int = 1000) -> int | None:
+        for i in range(runs):
             method = random.choice(self.contract.methods)
             self._fuzz_method(method)
             self.contract_state.load(self.owner_acc[1])
             res = eval(self.owner_acc[1], self.contract_state)
 
-            assert res, "Evaluation failed"
+            if not res:
+                return i
 
     
 class TotalContractFuzzer:
@@ -214,7 +211,7 @@ class TotalContractFuzzer:
         return self.inp
     
 
-    def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
+    def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100) -> int | None:
         self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
         opt_in(self.owner_acc, self.app_id)
 
@@ -230,18 +227,15 @@ class TotalContractFuzzer:
 
         print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
 
-        try:
-            for _ in range(runs):
-                self._call()
-                self._eval(eval)
-        except AssertionError:
-            print("EVALUATION FAILED")
-            exit()
+        for i in range(runs):
+            self._call()
+            if not self._eval(eval):
+                return i
 
     def _eval(self, eval):
         self.contract_state.load(self.owner_acc[1])
         eval_res = eval(self.owner_acc[1], self.contract_state)
-        assert eval_res, "Evaluation failed"
+        return eval_res
 
     def _call(self):
         method_name, args = self.fuzz()
