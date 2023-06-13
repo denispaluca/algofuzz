@@ -9,6 +9,8 @@ AlgoFuzz is a property-based fuzzing tool for Algorand smart contracts. The tool
 1. Start an Algorand local network with AlgoKit  
 `algokit localnet start`
 
+1. Adjust the environment variables in the `.env` file for your localnet if they differ. 
+
 1. Create a new python virtual environment  
 `python -m venv ./.venv`
 
