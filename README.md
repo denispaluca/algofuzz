@@ -9,13 +9,26 @@ AlgoFuzz is a property-based fuzzing tool for Algorand smart contracts. The tool
 1. Start an Algorand local network with AlgoKit  
 `algokit localnet start`
 
-2. In the file `property_test.py` write your property tests inside `evaluate` using the `ContractState` to retrieve the global and local state. i.e:  
-```py
-def evaluate(exec_account_address: str, contract: ContractState) -> bool:    
-    return contract.get_global('nr_users') < 10
-```
+1. Create a new python virtual environment  
+`python -m venv ./.venv`
 
-3. Execute the program with arguments:  
+1. Activate the virtual environment  
+Linux: `./.venv/bin/activate`  
+Windows: `.\Scripts\activate.bat`
+
+1. Install python requirements  
+`pip install -r requirements.txt`
+
+1. Install AlgoFuzz as a package  
+`pip install .`
+
+1. In the file `property_test.py` write your property tests inside `evaluate` using the `ContractState` to retrieve the global and local state. i.e:  
+    ```py
+    def evaluate(exec_account_address: str, contract: ContractState) -> bool:    
+        return contract.get_global('nr_users') < 10
+    ```
+
+1. Execute the program with arguments:  
 `python src/main.py <approval-path> <clear-path> <contract-path> <state-schema>`
     - **approval-path**: Path to approval teal program (e.g. approval.teal)
     - **clear-path**: Path to clear teal program (e.g. clear.teal)

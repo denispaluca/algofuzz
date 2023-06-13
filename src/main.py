@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any
 from ContractFuzzer import ContractFuzzer, TotalContractFuzzer
 from contract import deploy
-from fuzz import fuzz, fuzz2
 from property_test import evaluate
 
 def main(*args: Any, **kwds: Any) -> Any:
