@@ -1,6 +1,8 @@
 import random
 from algosdk.abi import *
 
+from src.utils import get_account_balance
+
 # uintN mutator
 class UintMutator:
     min = 0
@@ -198,18 +200,18 @@ class PaymentObject:
         self.amount = amount
 
 class PaymentMutator:
-    def __init__(self, max_amount) -> None:
-        self.max = max_amount
+    def __init__(self, addr: str) -> None:
+        self.addr = addr
 
     def seed(self):
         return PaymentObject(0)
     
     def mutate(self, value: PaymentObject):
-        value.amount = random.randint(0, self.max)
+        value.amount = random.randint(0, get_account_balance(self.addr))
         return value
 
 
-def get_mutator(arg: ABIType | str, max_micro_algo: int):
+def get_mutator(arg: ABIType | str, addr: str):
     if isinstance(arg, UintType):
         return UintMutator(arg.bit_size)
     elif isinstance(arg, UfixedType):
@@ -227,14 +229,14 @@ def get_mutator(arg: ABIType | str, max_micro_algo: int):
     elif isinstance(arg, TupleType):
         return TupleMutator(arg)
     elif arg == 'pay':
-        return PaymentMutator(max_micro_algo)
+        return PaymentMutator(addr)
     else:
         return UintMutator(256)
     
 
 class MethodMutator:
-    def __init__(self, method: Method, max_micro_algo: int) -> None:
-        self._mutators = [get_mutator(arg.type, max_micro_algo) for arg in method.args]
+    def __init__(self, method: Method, addr: int) -> None:
+        self._mutators = [get_mutator(arg.type, addr) for arg in method.args]
         
     def seed(self):
         return [mutator.seed() for mutator in self._mutators]
