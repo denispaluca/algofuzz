@@ -152,7 +152,7 @@ class ContractFuzzer:
             method = random.choice(self.app_client.methods)
             self._fuzz_method(method)
             self.contract_state.load(self.app_client.sender)
-            res = eval(self.app_client.signer, self.contract_state)
+            res = eval(self.app_client.sender, self.contract_state)
 
             if not res:
                 return i
