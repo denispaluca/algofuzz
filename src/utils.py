@@ -1,9 +1,9 @@
 import os
 from dataclasses import dataclass
 from typing import List
-from algokit_utils import Account
+from algokit_utils import Account, ApplicationSpecification, CallConfig
 
-from algosdk import transaction, logic
+from algosdk import transaction, logic, abi
 from algosdk.v2client import algod, indexer
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.kmd import KMDClient
@@ -144,3 +144,17 @@ def get_funded_account(algod_client: algod.AlgodClient) -> Account:
     dispense(algod_client, account.address, int(2e8))
     return account
     
+def create_app_spec(approval: str, clear: str, contract: str, schema: tuple[int, int, int, int]) -> ApplicationSpecification:
+    return ApplicationSpecification(
+        approval_program=approval,
+        clear_program=clear,
+        contract=abi.Contract.from_json(contract),
+        global_state_schema=transaction.StateSchema(schema[0], schema[1]),
+        local_state_schema=transaction.StateSchema(schema[2], schema[3]),
+        hints={},
+        schema={},
+        bare_call_config={
+            "no_op": CallConfig.CREATE,
+            "opt_in": CallConfig.CALL
+        },
+    )
