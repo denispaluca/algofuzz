@@ -1,7 +1,7 @@
 import os
-import base64
 from dataclasses import dataclass
 from typing import List
+from algokit_utils import Account
 
 from algosdk import transaction, logic
 from algosdk.v2client import algod, indexer
@@ -127,3 +127,20 @@ def get_application_address(
 ) -> str:
     """returns the address of an application given its id"""
     return logic.get_application_address(app_id)
+
+
+def dispense(algod_client: algod.AlgodClient, address: str, amount: int) -> None:
+    sp = algod_client.suggested_params()
+    accounts = get_accounts()
+    dispenser = accounts[0]
+    ptxn = transaction.PaymentTxn(
+        sender=dispenser.address, sp=sp, receiver=address, amt=amount
+    ).sign(dispenser.private_key)
+    txid = algod_client.send_transaction(ptxn)
+    transaction.wait_for_confirmation(algod_client, txid, 0)
+
+def get_funded_account(algod_client: algod.AlgodClient) -> Account:
+    account = Account.new_account()
+    dispense(algod_client, account.address, int(2e8))
+    return account
+    

@@ -1,5 +1,4 @@
-from contract import ContractState
-from abc import ABC, abstractmethod
+from ContractState import ContractState
 
 #class Property(ABC):
 #    def __init__(self, key: str, contract: ContractAccountState) -> None:

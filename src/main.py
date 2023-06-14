@@ -1,14 +1,47 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import argparse
 from pathlib import Path
 from typing import Any
-from ContractFuzzer import ContractFuzzer, TotalContractFuzzer
-from contract import deploy
+from ContractFuzzer import TotalContractFuzzer
 from property_test import evaluate
+from algokit_utils import ApplicationSpecification, CallConfig, get_algod_client
+from algosdk.transaction import StateSchema
+from algosdk.abi import Contract
+from algosdk.atomic_transaction_composer import AccountTransactionSigner
+from FuzzAppClient import FuzzAppClient
+from src.utils import get_funded_account
+
 
 def main(*args: Any, **kwds: Any) -> Any:
     approval, clear, contract, schema = parse_args()
+
+    app_spec = ApplicationSpecification(
+        approval_program=approval,
+        clear_program=clear,
+        contract=Contract.from_json(contract),
+        global_state_schema=StateSchema(schema[0], schema[1]),
+        local_state_schema=StateSchema(schema[2], schema[3]),
+        hints={},
+        schema={},
+        bare_call_config={
+            "no_op": CallConfig.CREATE,
+            "opt_in": CallConfig.CALL
+        },
+    )
+
+    algod_client = get_algod_client()
+    account = get_funded_account(algod_client)
+    app_client = FuzzAppClient(
+        algod_client, 
+        app_spec, 
+        sender= account.address, 
+        signer= AccountTransactionSigner(account.private_key)
+    )
+
     
-    fuzzer = TotalContractFuzzer(approval, clear, contract, schema)
+    fuzzer = TotalContractFuzzer(app_client)
     fuzzer.start(evaluate, 10000)
 
 def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:

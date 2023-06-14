@@ -1,7 +1,7 @@
 from algokit_utils import ApplicationClient
 from algosdk import abi, atomic_transaction_composer, transaction
 
-from src.mutate import PaymentObject
+from mutate import PaymentObject
 
 
 class FuzzAppClient(ApplicationClient):
@@ -9,6 +9,9 @@ class FuzzAppClient(ApplicationClient):
     @property
     def methods(self) -> list[abi.Method]:
         return self.app_spec.contract.methods
+    
+    def get_method(self, name: str) -> abi.Method:
+        return self.app_spec.contract.get_method_by_name(name)
     
     def call(self, method: abi.Method, args: list):
         sp = self.algod_client.suggested_params()

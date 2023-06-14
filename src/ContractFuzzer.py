@@ -1,15 +1,13 @@
 import hashlib
-from pathlib import Path
 import pickle
 import random
-import time
-from typing import Any, Callable, Set, Union, Sequence, Dict, List
+from typing import Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
-from src.CoverageHistory import CoverageHistory
+from FuzzAppClient import FuzzAppClient
+from CoverageHistory import CoverageHistory
 
-from src.contract import ContractState, call, deploy, opt_in
-from src.mutate import MethodMutator
-from src.utils import get_account_balance
+from mutate import MethodMutator
+from ContractState import ContractState
 
 class Seed:
     """Represent an input with additional attributes"""
@@ -122,26 +120,20 @@ class MethodFuzzer:
         return self.inp
 
 class ContractFuzzer:
-    def __init__(self, approval: str, clear: str, contract:str, schema: tuple[int,int,int,int]):
-        self.approval = approval
-        self.clear = clear
-        self.schema = schema
-        self.contract = abi.Contract.from_json(contract)
-
+    def __init__(self, app_client: FuzzAppClient):
+        self.app_client = app_client
         self.coverage = CoverageHistory()
-        self.app_id = None
-        self.owner_acc = None
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
-        self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
-        opt_in(self.owner_acc, self.app_id)
-        self.contract_state = ContractState(self.app_id)
-        self.contract_state.load(self.owner_acc[1])
+        self.app_client.create()
+        self.app_client.opt_in()
+        self.contract_state = ContractState(self.app_client.app_id)
+        self.contract_state.load(self.app_client.sender)
 
 
-        self.method_fuzzers = {method.name: MethodFuzzer(method, self.owner_acc[1]) for method in self.contract.methods}
+        self.method_fuzzers = {method.name: MethodFuzzer(method, self.app_client.sender) for method in self.app_client.methods}
 
-        print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
+        print(f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) from account {self.app_client.sender}")
 
         return self._fuzz(eval, runs)
     
@@ -151,31 +143,25 @@ class ContractFuzzer:
         input = method_fuzzer.fuzz()
         print(input)
 
-        res, cov = call(method, self.owner_acc, self.app_id, input)
+        res, cov = self.app_client.call(method, input)
         new_lines_covered = self.coverage.update(cov)
         method_fuzzer.update(set(cov), new_lines_covered)
             
     def _fuzz(self, eval: Callable[[str, ContractState], bool], runs: int = 1000) -> int | None:
         for i in range(runs):
-            method = random.choice(self.contract.methods)
+            method = random.choice(self.app_client.methods)
             self._fuzz_method(method)
-            self.contract_state.load(self.owner_acc[1])
-            res = eval(self.owner_acc[1], self.contract_state)
+            self.contract_state.load(self.app_client.sender)
+            res = eval(self.app_client.signer, self.contract_state)
 
             if not res:
                 return i
 
     
 class TotalContractFuzzer:
-    def __init__(self, approval: str, clear: str, contract:str, schema: tuple[int,int,int,int]):
-        self.approval = approval
-        self.clear = clear
-        self.schema = schema
-        self.contract = abi.Contract.from_json(contract)
-
+    def __init__(self, app_client: FuzzAppClient):
+        self.app_client = app_client
         self.coverage = CoverageHistory()
-        self.app_id = None
-        self.owner_acc = None
 
     
     def mutate(self, value: tuple[str, list]):
@@ -212,20 +198,20 @@ class TotalContractFuzzer:
     
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100) -> int | None:
-        self.app_id, self.owner_acc = deploy(self.approval, self.clear, self.schema)
-        opt_in(self.owner_acc, self.app_id)
+        self.app_client.create()
+        self.app_client.opt_in()
+        
+        self.contract_state = ContractState(self.app_client.app_id)
+        self.contract_state.load(self.app_client.sender)
 
-        self.contract_state = ContractState(self.app_id)
-        self.contract_state.load(self.owner_acc[1])
-
-        self.method_mutators = {method.name: MethodMutator(method, self.owner_acc[1]) for method in self.contract.methods}
-        self.seeds = [(method.name, self.method_mutators[method.name].seed()) for method in self.contract.methods]
+        self.method_mutators = {method.name: MethodMutator(method, self.app_client.sender) for method in self.app_client.methods}
+        self.seeds = [(method.name, self.method_mutators[method.name].seed()) for method in self.app_client.methods]
         self.seed_index = 0
         self.population: list[Seed] = []
         self.inputs = []
         self.schedule = PowerSchedule()
 
-        print(f"Fuzzing contract {self.contract.name} (id: {self.app_id}) from account {self.owner_acc[1]}")
+        print(f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) from account {self.app_client.sender}")
 
         for i in range(runs):
             self._call()
@@ -233,15 +219,15 @@ class TotalContractFuzzer:
                 return i
 
     def _eval(self, eval):
-        self.contract_state.load(self.owner_acc[1])
-        eval_res = eval(self.owner_acc[1], self.contract_state)
+        self.contract_state.load(self.app_client.sender)
+        eval_res = eval(self.app_client.sender, self.contract_state)
         return eval_res
 
     def _call(self):
         method_name, args = self.fuzz()
         print(f"Calling {method_name} with {args}")
-        method = self.contract.get_method_by_name(method_name)
-        res, cov = call(method, self.owner_acc, self.app_id, args)
+        method = self.app_client.get_method(method_name)
+        res, cov = self.app_client.call(method, args)
         new_lines_covered = self.coverage.update(cov)
 
         covSet = set(cov)
