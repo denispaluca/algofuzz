@@ -10,6 +10,7 @@ python = "^3.10"
 algokit-utils = "^1.2.0"
 pyteal = "^0.25.0"
 py-algorand-sdk = "^2.3.0"
+python-dotenv = "^1.0.0"
 
 
 [build-system]
