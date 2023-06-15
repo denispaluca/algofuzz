@@ -1,10 +1,16 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+
 from foo_contract import compile
 from foo_eval import evaluate
-from src.ContractFuzzer import ContractFuzzer, TotalContractFuzzer
+
+from algofuzz.FuzzAppClient import FuzzAppClient 
+from algofuzz.ContractFuzzer import ContractFuzzer, TotalContractFuzzer
 
 
 def main():
-    fuzzer = ContractFuzzer(*compile())
+    fuzzer = ContractFuzzer(FuzzAppClient.from_compiled(*compile()))
     fuzzer.start(evaluate, 10000)
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-from src.ContractFuzzer import ContractState
+from algofuzz.ContractState import ContractState
 
 
 def evaluate(exec_account_address: str, contract: ContractState) -> bool:    
