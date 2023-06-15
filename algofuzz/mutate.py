@@ -199,6 +199,12 @@ class PaymentObject:
     def __init__(self, amount: int) -> None:
         self.amount = amount
 
+    def __str__(self) -> str:
+        return f"Pay {self.amount/1e7} Algos"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
 class PaymentMutator:
     def __init__(self, addr: str) -> None:
         self.addr = addr
