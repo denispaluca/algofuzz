@@ -1,5 +1,5 @@
-from src.ContractFuzzer import ContractState
-from src.utils import get_account_balance
+from algofuzz.ContractState import ContractState
+from algofuzz.utils import get_account_balance
 
 address = None
 contract_address = None
