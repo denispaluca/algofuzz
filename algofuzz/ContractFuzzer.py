@@ -3,11 +3,11 @@ import pickle
 import random
 from typing import Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
-from FuzzAppClient import FuzzAppClient
-from CoverageHistory import CoverageHistory
+from algofuzz.FuzzAppClient import FuzzAppClient
+from algofuzz.CoverageHistory import CoverageHistory
 
-from mutate import MethodMutator
-from ContractState import ContractState
+from algofuzz.mutate import MethodMutator
+from algofuzz.ContractState import ContractState
 
 class Seed:
     """Represent an input with additional attributes"""

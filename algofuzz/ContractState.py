@@ -1,5 +1,5 @@
 from algokit_utils import AppSpecStateDict, get_algod_client
-from utils import get_application_address
+from algofuzz.utils import get_application_address
 import base64
 
 

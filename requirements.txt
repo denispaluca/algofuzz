@@ -1,3 +1,0 @@
-py_algorand_sdk==2.2.0
-pyteal==0.24.1
-setuptools==59.6.0

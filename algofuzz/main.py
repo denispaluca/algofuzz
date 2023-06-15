@@ -4,25 +4,15 @@ load_dotenv()
 import argparse
 from pathlib import Path
 from typing import Any
-from ContractFuzzer import TotalContractFuzzer
-from property_test import evaluate
-from algokit_utils import get_algod_client
+from algofuzz.ContractFuzzer import TotalContractFuzzer
+from algofuzz.property_test import evaluate
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
-from FuzzAppClient import FuzzAppClient
-from utils import get_funded_account, create_app_spec
+from algofuzz.FuzzAppClient import FuzzAppClient
 
 
 def main(*args: Any, **kwds: Any) -> Any:
-    app_spec = create_app_spec(*parse_args())
-    algod_client = get_algod_client()
-    account = get_funded_account(algod_client)
-    app_client = FuzzAppClient(
-        algod_client, 
-        app_spec, 
-        sender= account.address, 
-        signer= AccountTransactionSigner(account.private_key)
-    )
-
+    approval, clear, contract, schema = parse_args()
+    app_client = FuzzAppClient.from_compiled(approval, clear, contract, schema)
     
     fuzzer = TotalContractFuzzer(app_client)
     fuzzer.start(evaluate, 10000)

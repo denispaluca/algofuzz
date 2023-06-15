@@ -1,7 +1,7 @@
 import random
 from algosdk.abi import *
 
-from utils import get_account_balance
+from algofuzz.utils import get_account_balance
 
 # uintN mutator
 class UintMutator:

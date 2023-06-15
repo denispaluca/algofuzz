@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/main.py",
+            "program": "${workspaceFolder}/algofuzz/main.py",
             "args": [
                 "../algo-tut/my-first-router/artifacts/approval.teal",
                 "../algo-tut/my-first-router/artifacts/clear.teal",

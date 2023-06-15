@@ -1,7 +1,8 @@
-from algokit_utils import ApplicationClient
+from algokit_utils import ApplicationClient, get_algod_client
 from algosdk import abi, atomic_transaction_composer, transaction
 
-from mutate import PaymentObject
+from algofuzz.mutate import PaymentObject
+from algofuzz.utils import create_app_spec, get_funded_account
 
 
 class FuzzAppClient(ApplicationClient):
@@ -61,3 +62,16 @@ class FuzzAppClient(ApplicationClient):
             return None, coverage
         
         return result, coverage
+    
+    @staticmethod
+    def from_compiled(approval: str, clear: str, contract: str, schema) -> "FuzzAppClient":
+        app_spec = create_app_spec(approval, clear, contract, schema)
+        algod_client = get_algod_client()
+        account, signer = get_funded_account(algod_client)
+        app_client = FuzzAppClient(
+            algod_client, 
+            app_spec, 
+            sender= account.address, 
+            signer= signer
+        )
+        return app_client

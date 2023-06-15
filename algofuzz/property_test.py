@@ -1,4 +1,4 @@
-from ContractState import ContractState
+from algofuzz.ContractState import ContractState
 
 #class Property(ABC):
 #    def __init__(self, key: str, contract: ContractAccountState) -> None:
