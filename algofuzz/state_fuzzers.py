@@ -154,7 +154,6 @@ class PartialStateFuzzer:
 class TotalStateFuzzer:
     def __init__(self, app_client: FuzzAppClient):
         self.app_client = app_client
-        self.coverage = CoverageHistory()
 
     
     def mutate(self, value: tuple[str, list]):
@@ -212,7 +211,6 @@ class TotalStateFuzzer:
                 return i
 
     def _eval(self, eval):
-        self.contract_state.load(self.app_client.sender)
         eval_res = eval(self.app_client.sender, self.contract_state)
         return eval_res
 
@@ -220,14 +218,14 @@ class TotalStateFuzzer:
         method_name, args = self.fuzz()
         print(f"Calling {method_name} with {args}")
         method = self.app_client.get_method(method_name)
-        res, cov = self.app_client.call(method, args)
-        new_lines_covered = self.coverage.update(cov)
+        res = self.app_client.call_no_cov(method, args)
 
-        covSet = set(cov)
-        self.schedule.addTransition(covSet)
-        if len(new_lines_covered) > 0:
+
+        transition = self.contract_state.load(self.app_client.sender)
+        is_new = self.schedule.addTransition(transition)
+        if is_new:
             seed = Seed(self.inp)
-            seed.coverage = covSet
+            seed.transition = transition
             self.population.append(seed)
     
 
