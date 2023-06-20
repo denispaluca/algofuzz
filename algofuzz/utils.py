@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from typing import List
-from algokit_utils import Account, ApplicationSpecification, CallConfig
+from algokit_utils import Account, ApplicationSpecification, CallConfig, get_algod_client
 
 from algosdk import transaction, logic, abi
 from algosdk.v2client import algod, indexer
@@ -18,21 +18,10 @@ KMD_URL = f"{KMD_ADDRESS}:{KMD_PORT}"
 DEFAULT_KMD_WALLET_NAME = "unencrypted-default-wallet"
 DEFAULT_KMD_WALLET_PASSWORD = ""
 
-ALGOD_ADDRESS = "http://localhost"
-ALGOD_TOKEN = "a" * 64
-ALGOD_PORT = os.getenv("ALGOD_PORT", default="4001")
-ALGOD_URL = f"{ALGOD_ADDRESS}:{ALGOD_PORT}"
-
 INDEXER_ADDRESS = "http://localhost"
 INDEXER_TOKEN = "a" * 64
 INDEXER_PORT = os.getenv("INDEXER_PORT", default="8980")
 INDEXER_URL = f"{INDEXER_ADDRESS}:{INDEXER_PORT}"
-
-
-def get_algod_client(
-    addr: str = ALGOD_URL, token: str = ALGOD_TOKEN
-) -> algod.AlgodClient:
-    return algod.AlgodClient(algod_token=token, algod_address=addr)
 
 
 def get_kmd_client(addr: str = KMD_URL, token: str = KMD_TOKEN) -> KMDClient:
@@ -113,12 +102,10 @@ def get_accounts(
 
 
 def get_account_balance(
-    address: str,
-    algod_address: str = ALGOD_URL,
-    algod_token: str = ALGOD_TOKEN,
+    address: str
 ) -> int:
     """returns the balance of an account"""
-    algod_client = algod.AlgodClient(algod_token, algod_address)
+    algod_client = get_algod_client()
     account_info = algod_client.account_info(address)
     return account_info.get("amount")
 
