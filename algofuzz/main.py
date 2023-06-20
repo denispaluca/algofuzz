@@ -8,13 +8,14 @@ from algofuzz.ContractFuzzer import TotalContractFuzzer
 from algofuzz.property_test import evaluate
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algofuzz.FuzzAppClient import FuzzAppClient
+from algofuzz.state_fuzzers import PartialStateFuzzer
 
 
 def main(*args: Any, **kwds: Any) -> Any:
     approval, clear, contract, schema = parse_args()
     app_client = FuzzAppClient.from_compiled(approval, clear, contract, schema)
     
-    fuzzer = TotalContractFuzzer(app_client)
+    fuzzer = PartialStateFuzzer(app_client)
     fuzzer.start(evaluate, 10000)
 
 def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:

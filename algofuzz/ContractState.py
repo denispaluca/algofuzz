@@ -13,13 +13,14 @@ class ContractState:
         self._address = get_application_address(app_id)
         self._global_state: AppSpecStateDict = {}
         self._local_state: dict[str, AppSpecStateDict] = {}
-        self._global_state_history: list[AppSpecStateDict] = []
-        self._local_state_history: dict[str, list[AppSpecStateDict]] = {}
         self._creator: str = None
 
-    def load(self, acc_address):
+    def load(self, acc_address) -> tuple[dict, dict]:
+        old_state = self.get_state()
         self._load_global()
         self._load_local(acc_address)
+
+        return old_state, self.get_state()
 
     def _load_global(self):
         app_info = self._client.application_info(self._app_id)
@@ -33,7 +34,6 @@ class ContractState:
             return
 
         self._global_state = self.__decode_state(global_state)
-        self._global_state_history.append(self._global_state)
 
     def _load_local(self, acc_address: str):
         account_info = self._client.account_application_info(acc_address, self._app_id)
@@ -46,9 +46,12 @@ class ContractState:
             return
 
         self._local_state[acc_address] = self.__decode_state(local_state)
-        if(acc_address not in self._local_state_history):
-            self._local_state_history[acc_address] = []
-        self._local_state_history[acc_address].append(self._local_state[acc_address])
+
+    def get_state(self) -> dict:
+        return {
+            'global': self._global_state,
+            'local': self._local_state
+        }
 
     def exists_global(self, key: str) -> bool:
         return key in self._global_state
@@ -56,8 +59,6 @@ class ContractState:
     def get_global(self, key: str) -> str | int:
         return self._global_state[key]
 
-    def get_global_history(self):
-        return self._global_state_history.copy()
 
     def exists_local(self, account_address: str, key: str) -> bool:
         return key in self._local_state[account_address]
@@ -65,20 +66,8 @@ class ContractState:
     def get_local(self, account_address: str, key: str) -> str | int:
         return self._local_state[account_address][key]
 
-    def get_local_history(self):
-        return self._local_state_history.copy()
-
     def get_creator(self):
         return self._creator
-
-    def count_unique_global_states(self):
-        return len(dict_list_to_set(self._global_state_history))
-
-    def count_unique_local_states(self):
-        result = 0
-        for val in self._local_state_history.values():
-            result += len(dict_list_to_set(val))
-        return result
 
     @staticmethod
     def __decode_state(state_object) -> AppSpecStateDict:

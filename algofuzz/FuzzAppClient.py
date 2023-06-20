@@ -15,27 +15,7 @@ class FuzzAppClient(ApplicationClient):
         return self.app_spec.contract.get_method_by_name(name)
     
     def call(self, method: abi.Method, args: list):
-        sp = self.algod_client.suggested_params()
-        atc = atomic_transaction_composer.AtomicTransactionComposer()
-
-        args_with_payments = []
-        for arg in args:
-            if not isinstance(arg, PaymentObject):
-                args_with_payments.append(arg)
-                continue
-
-            payment = transaction.PaymentTxn(self.sender, sp, self.app_address, arg.amount)
-            args_with_payments.append(atomic_transaction_composer.TransactionWithSigner(payment, self.signer))
-
-        atc.add_method_call(
-            app_id= self.app_id,
-            method= method,
-            sender= self.sender,
-            sp= sp,
-            signer= self.signer,
-            method_args= args_with_payments
-        )
-        txns = atc.gather_signatures()
+        txns = self._prepare_txns(method, args)
 
         dryrun_request = transaction.create_dryrun(self.algod_client, txns)
         dryrun_result = self.algod_client.dryrun(dryrun_request)
@@ -62,6 +42,40 @@ class FuzzAppClient(ApplicationClient):
             return None, coverage
         
         return result, coverage
+    
+    def call_no_cov(self, method, args):
+        txns = self._prepare_txns(method, args)
+        try:
+            txid = self.algod_client.send_transactions(txns)
+            result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
+        except Exception as e:
+            return None
+        
+        return result
+
+    def _prepare_txns(self, method, args):
+        sp = self.algod_client.suggested_params()
+        atc = atomic_transaction_composer.AtomicTransactionComposer()
+
+        args_with_payments = []
+        for arg in args:
+            if not isinstance(arg, PaymentObject):
+                args_with_payments.append(arg)
+                continue
+
+            payment = transaction.PaymentTxn(self.sender, sp, self.app_address, arg.amount)
+            args_with_payments.append(atomic_transaction_composer.TransactionWithSigner(payment, self.signer))
+
+        atc.add_method_call(
+            app_id= self.app_id,
+            method= method,
+            sender= self.sender,
+            sp= sp,
+            signer= self.signer,
+            method_args= args_with_payments
+        )
+        txns = atc.gather_signatures()
+        return txns
     
     @staticmethod
     def from_compiled(approval: str, clear: str, contract: str, schema) -> "FuzzAppClient":
