@@ -4,7 +4,7 @@ load_dotenv()
 import argparse
 from pathlib import Path
 from typing import Any
-from algofuzz.ContractFuzzer import TotalContractFuzzer
+from algofuzz.coverage_fuzzers import TotalCoverageFuzzer
 from algofuzz.property_test import evaluate
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algofuzz.FuzzAppClient import FuzzAppClient

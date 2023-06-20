@@ -119,7 +119,7 @@ class MethodFuzzer:
         self.inputs.append(self.inp)
         return self.inp
 
-class ContractFuzzer:
+class PartialCoverageFuzzer:
     def __init__(self, app_client: FuzzAppClient):
         self.app_client = app_client
         self.coverage = CoverageHistory()
@@ -158,7 +158,7 @@ class ContractFuzzer:
                 return i
 
     
-class TotalContractFuzzer:
+class TotalCoverageFuzzer:
     def __init__(self, app_client: FuzzAppClient):
         self.app_client = app_client
         self.coverage = CoverageHistory()
