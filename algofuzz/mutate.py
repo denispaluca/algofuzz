@@ -248,6 +248,8 @@ class MethodMutator:
         return [mutator.seed() for mutator in self._mutators]
         
     def mutate(self, previous_args: list):
+        if len(previous_args) == 0:
+            return previous_args
         new_args = previous_args.copy()
         ranom_indicies = random.sample(range(len(self._mutators)), random.randint(1, len(self._mutators)))
         for index in ranom_indicies:
