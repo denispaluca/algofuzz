@@ -12,18 +12,19 @@ from algofuzz.combined_fuzzers import TotalCombinedFuzzer
 CONTRACT
 """
 
-found = Bytes("found")
-other_state = Bytes("other_state")
+start = Bytes("start")
+marked = Bytes("marked")
+
 
 
 handle_creation = Seq(
-    App.globalPut(found, Int(0)),
-    App.globalPut(other_state, Int(0)),
+    App.globalPut(start, Global.latest_timestamp()),
+    App.globalPut(marked, Global.latest_timestamp()),
     Approve()
 )
 
 router = Router(
-    "payable_contract",
+    "time_contract",
     BareCallActions(
     no_op=OnCompleteAction.create_only(handle_creation),
     opt_in=OnCompleteAction.call_only(Approve()),
@@ -35,21 +36,12 @@ router = Router(
 )
 
 @router.method
-def payable_method(payment: abi.PaymentTransaction):
+def mark():
     return Seq(
-        Assert(payment.get().receiver() == Global.current_application_address()),
-        Assert(payment.get().close_remainder_to() == Global.zero_address()),
-        If(payment.get().amount() == Int(129),
-            App.globalPut(found, Int(1))),
+        App.globalPut(marked, Global.latest_timestamp()),
         Approve()
     )
 
-@router.method
-def other_function(uint: abi.Uint64):
-    return Seq(
-        App.globalPut(other_state, Int(1)),
-        Approve()
-    )
 
 schema = (2,0,0,0)
 
@@ -61,9 +53,16 @@ def compile():
 """
 Evaluation / Property Test
 """
-def eval(address: str, state: ContractState) -> bool:
-    found = state.get_global("found")
-    return found == 0 
+def timepassed(address: str, state: ContractState) -> bool:
+    start = state.get_global("start")
+    marked = state.get_global("marked")
+    return start == marked
+
+def moretimepassed(address, state: ContractState):
+    start = state.get_global("start")
+    marked = state.get_global("marked")
+    minute = 60 
+    return start + minute > marked 
 
 
 """
@@ -71,7 +70,7 @@ Execution
 """
 def main():
     fuzzer = TotalCombinedFuzzer(FuzzAppClient.from_compiled(*compile()))
-    n = fuzzer.start(eval, 1000)
+    n = fuzzer.start(moretimepassed, 10000)
     if n is None:
         print("Not found")
         return
