@@ -9,7 +9,7 @@ from algofuzz.FuzzAppClient import FuzzAppClient
 from algofuzz.combined_fuzzers import TotalCombinedFuzzer
 
 """
-CONSTANTS CONTRACT
+CONTRACT
 """
 
 found = Bytes("found")

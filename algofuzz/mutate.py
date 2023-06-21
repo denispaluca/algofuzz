@@ -129,10 +129,10 @@ class BoolMutator:
         return False
 
 class ArrayMutator:
-    def __init__(self, arg: ArrayDynamicType):
+    def __init__(self, arg: ArrayDynamicType, adr: str):
         self.min = 0
         self.max = 2048 // arg.child_type.byte_len()
-        self.mutator = get_mutator(arg.child_type)
+        self.mutator = get_mutator(arg.child_type, adr)
         self.mutations = [
             self.add_element,
             self.remove_element,
@@ -169,8 +169,8 @@ class ArrayMutator:
     
 
 class ArrayStaticMutator(ArrayMutator):
-    def __init__(self, arg: ArrayStaticType):
-        super().__init__(arg)
+    def __init__(self, arg: ArrayStaticType, adr: str):
+        super().__init__(arg, adr)
         self.max = arg.static_length
         self.min = arg.static_length
 
@@ -181,9 +181,9 @@ class ArrayStaticMutator(ArrayMutator):
         return super().flip_element(value)
     
 class TupleMutator:
-    def __init__(self, args: TupleType):
+    def __init__(self, args: TupleType, adr: str):
         self.args = args
-        self.mutators = [get_mutator(arg.type) for arg in args.child_types]
+        self.mutators = [get_mutator(arg.type, adr) for arg in args.child_types]
 
     def seed(self):
         return [mutator.seed() for mutator in self.mutators]
@@ -229,11 +229,11 @@ def get_mutator(arg: ABIType | str, addr: str):
     elif isinstance(arg, ByteType):
         return ByteMutator()
     elif isinstance(arg, ArrayDynamicType):
-        return ArrayMutator(arg)
+        return ArrayMutator(arg, addr)
     elif isinstance(arg, ArrayStaticType):
-        return ArrayMutator(arg)
+        return ArrayStaticMutator(arg, addr)
     elif isinstance(arg, TupleType):
-        return TupleMutator(arg)
+        return TupleMutator(arg, addr)
     elif arg == 'pay':
         return PaymentMutator(addr)
     else:
