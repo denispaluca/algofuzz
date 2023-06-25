@@ -1,4 +1,4 @@
-from algokit_utils import ApplicationClient, get_algod_client
+from algokit_utils import Account, ApplicationClient, get_algod_client
 from algosdk import abi, atomic_transaction_composer, transaction
 
 from algofuzz.mutate import PaymentObject
@@ -59,12 +59,17 @@ class FuzzAppClient(ApplicationClient):
 
         args_with_payments = []
         for arg in args:
-            if not isinstance(arg, PaymentObject):
-                args_with_payments.append(arg)
+            if isinstance(arg, PaymentObject):
+                payment = transaction.PaymentTxn(self.sender, sp, self.app_address, arg.amount)
+                args_with_payments.append(atomic_transaction_composer.TransactionWithSigner(payment, self.signer))
                 continue
 
-            payment = transaction.PaymentTxn(self.sender, sp, self.app_address, arg.amount)
-            args_with_payments.append(atomic_transaction_composer.TransactionWithSigner(payment, self.signer))
+            if isinstance(arg, Account):
+                args_with_payments.append(arg.address)
+                continue
+
+            args_with_payments.append(arg)
+
 
         atc.add_method_call(
             app_id= self.app_id,

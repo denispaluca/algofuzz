@@ -1,7 +1,8 @@
 import random
+from algokit_utils import get_algod_client
 from algosdk.abi import *
 
-from algofuzz.utils import get_account_balance
+from algofuzz.utils import get_account_balance, get_funded_account
 
 # uintN mutator
 class UintMutator:
@@ -216,6 +217,14 @@ class PaymentMutator:
         value.amount = random.randint(0, get_account_balance(self.addr))
         return value
 
+class AccountMutator:
+    acc = get_funded_account(get_algod_client())[0]
+
+    def seed(self):
+        return self.acc
+    
+    def mutate(self, acc):
+        return self.acc
 
 def get_mutator(arg: ABIType | str, addr: str):
     if isinstance(arg, UintType):
@@ -236,6 +245,8 @@ def get_mutator(arg: ABIType | str, addr: str):
         return TupleMutator(arg, addr)
     elif arg == 'pay':
         return PaymentMutator(addr)
+    elif arg == 'account':
+        return AccountMutator()
     else:
         return UintMutator(256)
     

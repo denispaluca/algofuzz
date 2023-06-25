@@ -1,4 +1,5 @@
 from algokit_utils import AppSpecStateDict, get_algod_client
+from algofuzz.mutate import AccountMutator
 from algofuzz.utils import get_application_address
 import base64
 
@@ -65,6 +66,9 @@ class ContractState:
 
     def get_local(self, account_address: str, key: str) -> str | int:
         return self._local_state[account_address][key]
+    
+    def get_receiver(self) -> str:
+        return AccountMutator.acc.address
 
     def get_creator(self):
         return self._creator
