@@ -148,7 +148,7 @@ class PartialCombinedFuzzer:
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
         self.app_client.create()
         self.app_client.opt_in()
-        self.contract_state = ContractState(self.app_client.app_id)
+        self.contract_state = ContractState(self.app_client)
         self.contract_state.load(self.app_client.sender)
 
         self.method_fuzzers = {method.name: MethodFuzzer(method, self.app_client.sender) for method in self.app_client.methods}
@@ -220,9 +220,12 @@ class TotalCombinedFuzzer:
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100) -> int | None:
         self.app_client.create()
-        self.app_client.opt_in()
+        try:
+            self.app_client.opt_in()
+        except:
+            pass
         
-        self.contract_state = ContractState(self.app_client.app_id)
+        self.contract_state = ContractState(self.app_client)
         self.contract_state.load(self.app_client.sender)
 
         self.method_mutators = {method.name: MethodMutator(method, self.app_client.sender) for method in self.app_client.methods}
