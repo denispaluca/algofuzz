@@ -184,7 +184,7 @@ class ArrayStaticMutator(ArrayMutator):
 class TupleMutator:
     def __init__(self, args: TupleType, adr: str):
         self.args = args
-        self.mutators = [get_mutator(arg.type, adr) for arg in args.child_types]
+        self.mutators = [get_mutator(arg, adr) for arg in args.child_types]
 
     def seed(self):
         return [mutator.seed() for mutator in self.mutators]
