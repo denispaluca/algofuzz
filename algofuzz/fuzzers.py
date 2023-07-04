@@ -11,6 +11,11 @@ from algofuzz.mutate import MethodMutator
 from algofuzz.ContractState import ContractState
 from enum import Enum
 
+class Driver(Enum):
+    COVERAGE = 1
+    STATE = 2
+    COMBINED = 3
+
 class Seed:
     """Represent an input with additional attributes"""
 
@@ -80,7 +85,10 @@ class PowerSchedule:
         seed: Seed = random.choices(population, weights=norm_energy)[0]
         return seed
     
-    def addTransition(self, transition: tuple[dict, dict]) -> bool:
+    def addTransition(self, transition: tuple[dict, dict] | None) -> bool:
+        if transition is None:
+            return False
+        
         transition_id = get_transition_id(transition)
         if transition_id not in self.transition_frequency:
             self.transition_frequency[transition_id] = 1
@@ -89,7 +97,10 @@ class PowerSchedule:
         self.transition_frequency[transition_id] += 1
         return False
     
-    def addPath(self, path: Set[int]) -> bool:
+    def addPath(self, path: Set[int] | None) -> bool:
+        if path is None:
+            return False
+        
         path_id = getPathID(path)
         if path_id not in self.path_frequency:
             self.path_frequency[path_id] = 1
@@ -148,11 +159,12 @@ class MethodFuzzer:
         self.inputs.append(self.inp)
         return self.inp
 
-class PartialCombinedFuzzer:
+class PartialFuzzer:
     def __init__(self, app_client: FuzzAppClient):
         self.app_client = app_client
 
-    def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100):
+    def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100, driver: Driver = Driver.COMBINED) -> int | None:
+        self.driver = driver
         self.app_client.create()
         self.app_client.opt_in()
         self.contract_state = ContractState(self.app_client)
@@ -170,11 +182,17 @@ class PartialCombinedFuzzer:
         input = method_fuzzer.fuzz()
         print(input)
 
-        res, cov = self.app_client.call(method, input)
+        is_state_driven = self.driver == Driver.STATE
+
+        res, cov = ((self.app_client.call_no_cov(method, input), None) 
+            if is_state_driven 
+            else self.app_client.call(method, input)) 
+
         if(not res):
             return
         
-        transition = self.contract_state.load(self.app_client.sender)
+        loaded = self.contract_state.load(self.app_client.sender) 
+        transition = loaded if is_state_driven else None
         method_fuzzer.update(cov, transition)
             
     def _fuzz(self, eval: Callable[[str, ContractState], bool], runs: int = 1000) -> int | None:
@@ -185,11 +203,6 @@ class PartialCombinedFuzzer:
 
             if not res:
                 return i
-
-class Driver(Enum):
-    COVERAGE = 1
-    STATE = 2
-    COMBINED = 3
 
 
 class TotalFuzzer:
@@ -264,33 +277,22 @@ class TotalFuzzer:
         print(f"Calling {method_name} with {args}")
         method = self.app_client.get_method(method_name)
 
-        res, cov = (self.app_client.call(method, args) 
-            if self.driver != Driver.STATE 
-            else (self.app_client.call_no_cov(method, args), None)) 
+        is_state_driven = self.driver == Driver.STATE
+
+        res, cov = ((self.app_client.call_no_cov(method, args), None) 
+            if is_state_driven 
+            else self.app_client.call(method, args)) 
 
         if(not res):
             return
         
-        transition = self.contract_state.load(self.app_client.sender)
+        loaded = self.contract_state.load(self.app_client.sender) 
+        transition = loaded if is_state_driven else None
+        is_new_transition = self.schedule.addTransition(transition) 
+        is_new_coverage = self.schedule.addPath(cov)
 
-        match self.driver:
-            case Driver.STATE:
-                is_new_transition = self.schedule.addTransition(transition)
-                if is_new_transition:
-                    seed = Seed(self.inp)
-                    seed.transition = transition
-                    self.population.append(seed)
-            case Driver.COVERAGE:
-                is_new_coverage = self.schedule.addPath(cov)
-                if is_new_coverage:
-                    seed = Seed(self.inp)
-                    seed.coverage = cov
-                    self.population.append(seed)
-            case Driver.COMBINED:
-                is_new_transition = self.schedule.addTransition(transition)
-                is_new_coverage = self.schedule.addPath(cov)
-                if is_new_coverage or is_new_transition:
-                    seed = Seed(self.inp)
-                    seed.transition = transition
-                    seed.coverage = cov
-                    self.population.append(seed)  
+        if is_new_coverage or is_new_transition:
+            seed = Seed(self.inp)
+            seed.transition = transition
+            seed.coverage = cov
+            self.population.append(seed)  
