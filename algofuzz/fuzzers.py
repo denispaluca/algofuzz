@@ -140,18 +140,27 @@ class ContractFuzzer(ABC):
 
         for i in range(runs):
             self._call()
-            if not self._eval(eval):
-                break
-            
+
+
             stdscr.addstr(2, 0, f"Calls executed: \t{i+1}/{runs}")
             stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls}\n")
             if self.driver != Driver.STATE:
-                stdscr.addstr(4, 0, f"Lines covered: \t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
+                stdscr.addstr(4, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
+            if self.driver != Driver.COVERAGE:
+                stdscr.addstr(5, 0, f"State transitions: \t{self._count_transitions()}\n")
             stdscr.refresh()
+
+            if not self._eval(eval):
+                break
+            
 
             
     @abstractmethod
     def _setup(self):
+        pass
+
+    @abstractmethod
+    def _count_transitions(self) -> int:
         pass
 
     def _create_power_schedule(self) -> PowerSchedule:
@@ -169,7 +178,6 @@ class ContractFuzzer(ABC):
         method = self.app_client.get_method(method_name)
 
         is_state_driven = self.driver == Driver.STATE
-
         res, cov = ((self.app_client.call_no_cov(method, args), None) 
             if is_state_driven 
             else self.app_client.call(method, args)) 
@@ -182,7 +190,7 @@ class ContractFuzzer(ABC):
             self.covered_lines.update(cov)
         
         loaded = self.contract_state.load(self.app_client.sender) 
-        transition = loaded if is_state_driven else None
+        transition = loaded if self.driver != Driver.COVERAGE else None
 
         self._update(cov, transition)
 
@@ -246,7 +254,13 @@ class PartialFuzzer(ContractFuzzer):
             method.name: MethodFuzzer(method, self.app_client.sender, self._create_power_schedule()) 
             for method in self.app_client.methods
         }
-    
+
+    def _count_transitions(self) -> int:
+        transitions = set()
+        for method_fuzzer in self.method_fuzzers.values():
+            transitions.update(method_fuzzer.schedule.transition_frequency.keys())
+        return len(transitions)
+
     def fuzz(self) -> Candidate:
         method = random.choice(self.app_client.methods)
         method_fuzzer = self.method_fuzzers[method.name]
@@ -258,6 +272,8 @@ class PartialFuzzer(ContractFuzzer):
         method_fuzzer = self.method_fuzzers[method.name]
         method_fuzzer.update(cov, transition)
 
+    
+
 
 class TotalFuzzer(ContractFuzzer):    
     def _setup(self):
@@ -266,6 +282,9 @@ class TotalFuzzer(ContractFuzzer):
         self.seed_index = 0
         self.population: list[Seed] = []
         self.schedule = self._create_power_schedule()
+
+    def _count_transitions(self) -> int:
+        return len(self.schedule.transition_frequency.keys())
 
     def fuzz(self):
         if self.seed_index < len(self.seeds):
