@@ -27,7 +27,6 @@ def main(*args: Any, **kwds: Any) -> Any:
     #     app_client = FuzzAppClient.from_compiled(approval, clear, contract, schema)
     #     fuzzer = TotalFuzzer(app_client)
     #     fuzzer.start(evaluate, 100, Driver(i))
-    input("Press Ctrl + c to exit;")
 
     
 
@@ -88,7 +87,8 @@ def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:
 
 
 if __name__ == '__main__':
-    try:
-        wrapper(main)
-    except KeyboardInterrupt:
-        print("Exiting...")
+    main()
+    # try:
+    #     wrapper(main)
+    # except KeyboardInterrupt:
+    #     print("Exiting...")
