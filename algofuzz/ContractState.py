@@ -11,6 +11,7 @@ def dict_list_to_set(dict_list: list[dict]) -> set[dict]:
 class ContractState:
     def __init__(self, app: FuzzAppClient) -> None:
         self._app = app
+        self._address = app.app_address
         self._client = get_algod_client()
         self._global_state: AppSpecStateDict = {}
         self._local_state: dict[str, AppSpecStateDict] = {}
