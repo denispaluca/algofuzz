@@ -11,6 +11,16 @@ class FuzzAppClient(ApplicationClient):
     def methods(self) -> list[abi.Method]:
         return self.app_spec.contract.methods
     
+    @property
+    def approval_disassembled(self) -> str:
+        response = self.algod_client.disassemble(self.approval.raw_binary)
+        result = response.get('result', '')
+        return result.split('\n')
+    
+    @property
+    def approval_line_count(self) -> int:
+        return len(self.approval_disassembled)
+
     def get_method(self, name: str) -> abi.Method:
         return self.app_spec.contract.get_method_by_name(name)
     

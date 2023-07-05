@@ -11,6 +11,7 @@ from algofuzz.mutate import MethodMutator
 from algofuzz.ContractState import ContractState
 from enum import Enum
 from abc import ABC, abstractmethod
+import curses
 
 class Driver(Enum):
     COVERAGE = 0
@@ -117,8 +118,11 @@ class ContractFuzzer(ABC):
         self.app_client = app_client
 
     def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100, driver: Driver = Driver.COMBINED) -> int | None:
+        self.rejected_calls = 0
+        self.covered_lines: Set[int] = set()
         self.driver = driver
         self.app_client.create()
+        self.lines_count = self.app_client.approval_line_count
         try:
             self.app_client.opt_in()
         except:
@@ -129,12 +133,22 @@ class ContractFuzzer(ABC):
 
         self._setup()
 
-        print(f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) from account {self.app_client.sender}")
+
+        stdscr = curses.initscr()
+
+        stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) from account {self.app_client.sender}")
 
         for i in range(runs):
             self._call()
             if not self._eval(eval):
-                return i
+                break
+            
+            stdscr.addstr(2, 0, f"Calls executed: \t{i+1}/{runs}")
+            stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls}\n")
+            if self.driver != Driver.STATE:
+                stdscr.addstr(4, 0, f"Lines covered: \t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
+            stdscr.refresh()
+
             
     @abstractmethod
     def _setup(self):
@@ -152,7 +166,6 @@ class ContractFuzzer(ABC):
 
     def _call(self):
         method_name, args = self.fuzz()
-        print(f"Calling {method_name} with {args}")
         method = self.app_client.get_method(method_name)
 
         is_state_driven = self.driver == Driver.STATE
@@ -162,7 +175,11 @@ class ContractFuzzer(ABC):
             else self.app_client.call(method, args)) 
 
         if(not res):
+            self.rejected_calls += 1
             return
+        
+        if cov is not None:
+            self.covered_lines.update(cov)
         
         loaded = self.contract_state.load(self.app_client.sender) 
         transition = loaded if is_state_driven else None

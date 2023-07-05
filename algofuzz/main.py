@@ -1,3 +1,4 @@
+import cProfile
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -10,14 +11,25 @@ from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algofuzz.FuzzAppClient import FuzzAppClient
 from algofuzz.state_fuzzers import PartialStateFuzzer, TotalStateFuzzer
 from algofuzz.combined_fuzzers import PartialCombinedFuzzer, TotalCombinedFuzzer
+from algofuzz.fuzzers import Driver, PartialFuzzer, TotalFuzzer
+from curses import wrapper
 
 
 def main(*args: Any, **kwds: Any) -> Any:
     approval, clear, contract, schema = parse_args()
     app_client = FuzzAppClient.from_compiled(approval, clear, contract, schema)
+    fuzzer = PartialFuzzer(app_client)
+
+    fuzzer.start(evaluate, 1000)
     
-    fuzzer = TotalCombinedFuzzer(app_client)
-    fuzzer.start(evaluate, 10000)
+    
+    # for i in range(3):
+    #     app_client = FuzzAppClient.from_compiled(approval, clear, contract, schema)
+    #     fuzzer = TotalFuzzer(app_client)
+    #     fuzzer.start(evaluate, 100, Driver(i))
+    input("Press Ctrl + c to exit;")
+
+    
 
 def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:
     parser = argparse.ArgumentParser(description='Fuzzer for Algorand smart contracts')
@@ -76,4 +88,7 @@ def parse_args() -> tuple[str, str, str, tuple[int, int, int, int]]:
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        wrapper(main)
+    except KeyboardInterrupt:
+        print("Exiting...")
