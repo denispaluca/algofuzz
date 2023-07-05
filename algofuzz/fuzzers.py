@@ -13,9 +13,9 @@ from enum import Enum
 from abc import ABC, abstractmethod
 
 class Driver(Enum):
-    COVERAGE = 1
-    STATE = 2
-    COMBINED = 3
+    COVERAGE = 0
+    STATE = 1
+    COMBINED = 2
 
 class Seed:
     """Represent an input with additional attributes"""
