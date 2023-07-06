@@ -19,7 +19,7 @@ class ContractState:
     def load(self, acc_address) -> tuple[dict, dict]:
         old_state = self.get_state()
         self._global_state = self._app.get_global_state()
-        self._local_state = self._app.get_local_state(acc_address)
+        self._local_state[acc_address] = self._app.get_local_state(acc_address)
 
         return old_state, self.get_state()
 
