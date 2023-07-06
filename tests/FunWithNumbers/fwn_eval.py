@@ -16,7 +16,7 @@ def evaluate(exec_account_address: str, contract: ContractState) -> bool:
         return False
     
     sender_balance_new = contract.get_local(address, key)
-    contract_algos_new = get_account_balance(contract_address)
+    contract_algos_new, _ = get_account_balance(contract_address)
     
     balance_increase = contract_algos_new > contract_algos_old and sender_balance_new > sender_balance_old
     balance_decrease = contract_algos_new < contract_algos_old and sender_balance_new < sender_balance_old

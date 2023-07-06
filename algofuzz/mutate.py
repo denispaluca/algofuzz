@@ -2,7 +2,7 @@ import random
 from algokit_utils import get_algod_client
 from algosdk.abi import *
 
-from algofuzz.utils import get_account_balance, get_funded_account
+from algofuzz.utils import dispense, get_account_balance, get_funded_account
 
 # uintN mutator
 class UintMutator:
@@ -214,7 +214,14 @@ class PaymentMutator:
         return PaymentObject(0)
     
     def mutate(self, value: PaymentObject):
-        value.amount = random.randint(0, get_account_balance(self.addr))
+        balance, min_balance = get_account_balance(self.addr)
+        if balance - min_balance < 1000:
+            dispense(get_algod_client(), self.addr, int(2e8))
+            balance, min_balance = get_account_balance(self.addr)
+        
+        half_max = (balance - min_balance - 1000) // 10
+        
+        value.amount = random.randint(0, half_max)
         return value
 
 class AccountMutator:

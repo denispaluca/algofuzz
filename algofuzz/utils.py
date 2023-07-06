@@ -103,11 +103,12 @@ def get_accounts(
 
 def get_account_balance(
     address: str
-) -> int:
+) -> tuple[int,int]:
     """returns the balance of an account"""
     algod_client = get_algod_client()
     account_info = algod_client.account_info(address)
-    return account_info.get("amount")
+    min_balance = account_info.get("min-balance")
+    return account_info.get("amount"), min_balance
 
 
 def get_application_address(
