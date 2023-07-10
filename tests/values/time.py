@@ -6,7 +6,7 @@ from pyteal import *
 
 from algofuzz.ContractState import ContractState
 from algofuzz.FuzzAppClient import FuzzAppClient
-from algofuzz.combined_fuzzers import TotalCombinedFuzzer
+from algofuzz.fuzzers import TotalFuzzer
 
 """
 CONTRACT
@@ -69,7 +69,7 @@ def moretimepassed(address, state: ContractState):
 Execution
 """
 def main():
-    fuzzer = TotalCombinedFuzzer(FuzzAppClient.from_compiled(*compile()))
+    fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
     n = fuzzer.start(moretimepassed, 10000)
     if n is None:
         print("Not found")

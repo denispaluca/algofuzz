@@ -6,7 +6,7 @@ from pyteal import *
 
 from algofuzz.ContractState import ContractState
 from algofuzz.FuzzAppClient import FuzzAppClient
-from algofuzz.combined_fuzzers import TotalCombinedFuzzer
+from algofuzz.fuzzers import TotalFuzzer
 
 """
 CONTRACT
@@ -67,12 +67,8 @@ def eval(address: str, state: ContractState) -> bool:
 Execution
 """
 def main():
-    fuzzer = TotalCombinedFuzzer(FuzzAppClient.from_compiled(*compile()))
+    fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
     n = fuzzer.start(eval, 1000)
-    if n is None:
-        print("Not found")
-        return
-    print(f"Found in {n} runs")
 
 
 if(__name__ == "__main__"):

@@ -6,7 +6,8 @@ from pyteal import *
 
 from algofuzz.ContractState import ContractState
 from algofuzz.FuzzAppClient import FuzzAppClient
-from algofuzz.combined_fuzzers import TotalCombinedFuzzer
+from algofuzz.fuzzers import TotalFuzzer
+from algofuzz.fuzzers import TotalFuzzer
 
 """
 CONTRACT
@@ -37,6 +38,7 @@ router = Router(
 @router.method
 def payable_method(payment: abi.PaymentTransaction):
     return Seq(
+        Assert(payment.get().receiver() == Bytes("a")),
         Assert(payment.get().receiver() == Global.current_application_address()),
         Assert(payment.get().close_remainder_to() == Global.zero_address()),
         If(payment.get().amount() == Int(129),
@@ -70,12 +72,8 @@ def eval(address: str, state: ContractState) -> bool:
 Execution
 """
 def main():
-    fuzzer = TotalCombinedFuzzer(FuzzAppClient.from_compiled(*compile()))
+    fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
     n = fuzzer.start(eval, 1000)
-    if n is None:
-        print("Not found")
-        return
-    print(f"Found in {n} runs")
 
 
 if(__name__ == "__main__"):
