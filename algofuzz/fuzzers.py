@@ -5,7 +5,6 @@ import random
 from typing import Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
 from algofuzz.FuzzAppClient import FuzzAppClient
-from algofuzz.CoverageHistory import CoverageHistory
 
 from algofuzz.mutate import MethodMutator
 from algofuzz.ContractState import ContractState

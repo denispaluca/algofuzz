@@ -5,14 +5,9 @@ load_dotenv()
 import argparse
 from pathlib import Path
 from typing import Any
-from algofuzz.coverage_fuzzers import TotalCoverageFuzzer
 from algofuzz.property_test import evaluate
-from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algofuzz.FuzzAppClient import FuzzAppClient
-from algofuzz.state_fuzzers import PartialStateFuzzer, TotalStateFuzzer
-from algofuzz.combined_fuzzers import PartialCombinedFuzzer, TotalCombinedFuzzer
 from algofuzz.fuzzers import Driver, PartialFuzzer, TotalFuzzer
-from curses import wrapper
 
 
 def main(*args: Any, **kwds: Any) -> Any:
