@@ -116,10 +116,20 @@ class ContractFuzzer(ABC):
     def __init__(self, app_client: FuzzAppClient):
         self.app_client = app_client
 
-    def start(self, eval: Callable[[str, ContractState], bool], runs: int = 100, driver: Driver = Driver.COMBINED) -> int | None:
+    def start(
+            self, 
+            eval: Callable[[str, ContractState], bool], 
+            runs: int = 100, 
+            driver: Driver = Driver.COMBINED,
+            schedule_coef: float = 0.5
+        ) -> int | None:
+
+        self.driver = driver
+        self.schedule_coef = schedule_coef
+
         self.rejected_calls = 0
         self.covered_lines: Set[int] = set()
-        self.driver = driver
+        
         self.app_client.create()
         self.lines_count = self.app_client.approval_line_count
         try:
@@ -166,7 +176,12 @@ class ContractFuzzer(ABC):
         match self.driver:
             case Driver.STATE: return PowerSchedule(trans_coef=1.0)
             case Driver.COVERAGE: return PowerSchedule(trans_coef=0.0)
-            case Driver.COMBINED: return PowerSchedule(trans_coef=0.5)
+            case Driver.COMBINED: 
+                trans_coef = 0.5
+                if 0.0 <= self.schedule_coef and self.schedule_coef <= 1.0:
+                    trans_coef = self.schedule_coef
+                
+                return PowerSchedule(trans_coef=trans_coef)
 
     def _eval(self, eval):
         eval_res = eval(self.app_client.sender, self.contract_state)
