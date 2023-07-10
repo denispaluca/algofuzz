@@ -191,10 +191,9 @@ class ContractFuzzer(ABC):
         method_name, args = self.fuzz()
         method = self.app_client.get_method(method_name)
 
-        is_state_driven = self.driver == Driver.STATE
-        res, cov = ((self.app_client.call_no_cov(method, args), None) 
-            if is_state_driven 
-            else self.app_client.call(method, args)) 
+        res, cov = (self.app_client.call_no_cov(method, args) 
+            if self.driver == Driver.STATE 
+            else self.app_client.call(method, args))
 
         if(not res):
             self.rejected_calls += 1

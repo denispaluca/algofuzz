@@ -39,7 +39,7 @@ class FuzzAppClient(ApplicationClient):
 
             msgs = txn['app-call-messages']
             if any([msg == 'REJECT' for msg in msgs]):
-                return None, coverage
+                return None, None
             
             lines = txn['app-call-trace']
             for line in lines:
@@ -49,7 +49,7 @@ class FuzzAppClient(ApplicationClient):
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
         except Exception as e:
-            return None, coverage
+            return None, None
         
         return result, coverage
     
@@ -59,9 +59,9 @@ class FuzzAppClient(ApplicationClient):
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
         except Exception as e:
-            return None
+            return None, None
         
-        return result
+        return result, None
 
     def _prepare_txns(self, method, args):
         sp = self.algod_client.suggested_params()
