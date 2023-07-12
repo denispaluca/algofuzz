@@ -147,3 +147,11 @@ def create_app_spec(approval: str, clear: str, contract: str, schema: tuple[int,
             "opt_in": CallConfig.CALL
         },
     )
+
+
+class FakeScr:
+    def addstr(self, *args, **kwargs):
+        pass
+
+    def refresh(self):
+        pass

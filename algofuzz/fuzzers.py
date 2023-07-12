@@ -12,6 +12,8 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import curses
 
+from algofuzz.utils import FakeScr
+
 class Driver(Enum):
     COVERAGE = 0
     STATE = 1
@@ -122,7 +124,8 @@ class ContractFuzzer(ABC):
             runs: int = 100, 
             driver: Driver = Driver.COMBINED,
             schedule_coef: float = 0.5,
-            breakout_coef = 0.1
+            breakout_coef = 0.1,
+            suppress_output: bool = False
         ) -> int | None:
 
         self.driver = driver
@@ -145,7 +148,7 @@ class ContractFuzzer(ABC):
         self._setup()
 
 
-        stdscr = curses.initscr()
+        stdscr = curses.initscr() if not suppress_output else FakeScr()
 
         mode = "Property Test" if eval is not None else "Assertion"
         stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) in {mode} mode\n")
