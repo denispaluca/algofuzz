@@ -162,11 +162,14 @@ class ContractFuzzer(ABC):
             if self.driver != Driver.STATE:
                 stdscr.addstr(4, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
             if self.driver != Driver.COVERAGE:
-                stdscr.addstr(5, 0, f"State transitions: \t{self._count_transitions()}\n")
+                self.transitions_count = self._count_transitions()
+                stdscr.addstr(5, 0, f"State transitions: \t{self.transitions_count}\n")
             stdscr.refresh()
 
             if not self._eval(eval, assert_failed):
                 break
+        
+        self.call_count = i + 1
             
 
             
