@@ -118,7 +118,7 @@ class ContractFuzzer(ABC):
 
     def start(
             self, 
-            eval: Callable[[str, ContractState], bool], 
+            eval: Callable[[str, ContractState], bool] = None, 
             runs: int = 100, 
             driver: Driver = Driver.COMBINED,
             schedule_coef: float = 0.5,
@@ -147,10 +147,11 @@ class ContractFuzzer(ABC):
 
         stdscr = curses.initscr()
 
-        stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) from account {self.app_client.sender}")
+        mode = "Property Test" if eval is not None else "Assertion"
+        stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) in {mode} mode\n")
 
         for i in range(runs):
-            self._call()
+            assert_failed = self._call()
 
 
             stdscr.addstr(2, 0, f"Calls executed: \t{i+1}/{runs}")
@@ -161,7 +162,7 @@ class ContractFuzzer(ABC):
                 stdscr.addstr(5, 0, f"State transitions: \t{self._count_transitions()}\n")
             stdscr.refresh()
 
-            if not self._eval(eval):
+            if not self._eval(eval, assert_failed):
                 break
             
 
@@ -185,21 +186,26 @@ class ContractFuzzer(ABC):
                 
                 return PowerSchedule(trans_coef=trans_coef)
 
-    def _eval(self, eval):
+    def _eval(self, eval, assertion_failed):
+        if eval is None:
+            return not assertion_failed
+        
         eval_res = eval(self.app_client.sender, self.contract_state)
         return eval_res
 
-    def _call(self):
+    def _call(self) -> bool:
+        """Makes a call to the applicaiton with a fuzzed value.
+        :return: Boolean indicating whether there was an assertion failure"""
         method_name, args = self.fuzz()
         method = self.app_client.get_method(method_name)
 
-        res, cov = (self.app_client.call_no_cov(method, args) 
+        res, cov, assert_failed = (self.app_client.call_no_cov(method, args) 
             if self.driver == Driver.STATE 
             else self.app_client.call(method, args))
 
-        if(not res):
+        if res is None:
             self.rejected_calls += 1
-            return
+            return assert_failed
         
         if cov is not None:
             self.covered_lines.update(cov)
@@ -208,6 +214,7 @@ class ContractFuzzer(ABC):
         transition = loaded if self.driver != Driver.COVERAGE else None
 
         self._update(cov, transition)
+        return False
 
     @abstractmethod
     def fuzz(self) -> Candidate:
@@ -267,7 +274,7 @@ class MethodFuzzer:
 class PartialFuzzer(ContractFuzzer):
     def _setup(self):
         self.method_fuzzers = {
-            method.name: MethodFuzzer(method, self.app_client.sender, self._create_power_schedule()) 
+            method.name: MethodFuzzer(method, self.app_client.sender, self._create_power_schedule(), self.breakout_coef) 
             for method in self.app_client.methods
         }
 

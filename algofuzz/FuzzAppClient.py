@@ -3,7 +3,9 @@ from algosdk import abi, atomic_transaction_composer, transaction
 
 from algofuzz.mutate import PaymentObject
 from algofuzz.utils import create_app_spec, get_funded_account
+from algosdk.error import AlgodHTTPError
 
+ASSERTION_FAIL_TEXT = 'assert failed'
 
 class FuzzAppClient(ApplicationClient):
 
@@ -39,7 +41,7 @@ class FuzzAppClient(ApplicationClient):
 
             msgs = txn['app-call-messages']
             if any([msg == 'REJECT' for msg in msgs]):
-                return None, None
+                return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in msgs])
             
             lines = txn['app-call-trace']
             for line in lines:
@@ -48,20 +50,24 @@ class FuzzAppClient(ApplicationClient):
         try:
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
+        except AlgodHTTPError as e:
+            return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in e.args])
         except Exception as e:
-            return None, None
+            return None, None, False
         
-        return result, coverage
+        return result, coverage, False
     
     def call_no_cov(self, method, args):
         txns = self._prepare_txns(method, args)
         try:
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
+        except AlgodHTTPError as e:
+            return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in e.args])
         except Exception as e:
-            return None, None
+            return None, None, False
         
-        return result, None
+        return result, None, False
 
     def _prepare_txns(self, method, args):
         sp = self.algod_client.suggested_params()
