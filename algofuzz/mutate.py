@@ -215,13 +215,10 @@ class PaymentMutator:
     
     def mutate(self, value: PaymentObject):
         balance, min_balance = get_account_balance(self.addr)
-        if balance - min_balance < 1000:
-            dispense(get_algod_client(), self.addr, int(2e8))
-            balance, min_balance = get_account_balance(self.addr)
-        
-        tenth_max = (balance - min_balance - 1000) // 10
-        
-        value.amount = random.randint(0, tenth_max)
+        if balance < 2e8:
+            dispense(get_algod_client(), self.addr, int(1e12))
+
+        value.amount = random.randint(0, int(1e8))
         return value
 
 class AccountMutator:
