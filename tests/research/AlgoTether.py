@@ -55,37 +55,37 @@ def only_creator():
 def pause_check():
     return If(App.globalGet(paused) == Int(1)).Then(Reject())
 
-# @router.method
-# def pause():
-#     return Seq(
-#         only_creator(),
-#         App.globalPut(paused, Int(1)),
-#         Approve()
-#     )
+@router.method
+def pause():
+    return Seq(
+        only_creator(),
+        App.globalPut(paused, Int(1)),
+        Approve()
+    )
 
-# @router.method
-# def unpause():
-#     return Seq(
-#         only_creator(),
-#         App.globalPut(paused, Int(0)),
-#         Approve()
-#     )
+@router.method
+def unpause():
+    return Seq(
+        only_creator(),
+        App.globalPut(paused, Int(0)),
+        Approve()
+    )
 
-# @router.method
-# def set_exchange_rate(new_rate: abi.Uint64):
-#     absolute_spread = ScratchVar(TealType.uint64)
-#     new_issue_rate = ScratchVar(TealType.uint64)
-#     return Seq(
-#         only_creator(),
-#         If(new_rate.get() == Int(0)).Then(Reject()),
-#         absolute_spread.store(new_rate.get() / spread),
-#         If(absolute_spread.load() == Int(0)).Then(Reject()),
-#         new_issue_rate.store(new_rate.get() - absolute_spread.load()),
-#         If(new_issue_rate.load() == Int(0)).Then(Reject()),
-#         App.globalPut(issue_rate, new_issue_rate.load()),
-#         App.globalPut(redeem_rate, new_rate.get() + absolute_spread.load()),
-#         Approve()
-#     )
+@router.method
+def set_exchange_rate(new_rate: abi.Uint64):
+    absolute_spread = ScratchVar(TealType.uint64)
+    new_issue_rate = ScratchVar(TealType.uint64)
+    return Seq(
+        only_creator(),
+        If(new_rate.get() == Int(0)).Then(Reject()),
+        absolute_spread.store(new_rate.get() / spread),
+        If(absolute_spread.load() == Int(0)).Then(Reject()),
+        new_issue_rate.store(new_rate.get() - absolute_spread.load()),
+        If(new_issue_rate.load() == Int(0)).Then(Reject()),
+        App.globalPut(issue_rate, new_issue_rate.load()),
+        App.globalPut(redeem_rate, new_rate.get() + absolute_spread.load()),
+        Approve()
+    )
 
 
 microAlgosPerAlgo = Int(1000000)
@@ -93,24 +93,30 @@ microAlgosPerAlgo = Int(1000000)
 def issue(payment: abi.PaymentTransaction):
     tether_to_issue = ScratchVar(TealType.uint64)
     payment_to_refund = ScratchVar(TealType.uint64)
+    acc_balance = ScratchVar(TealType.uint64)
     return Seq(
         pause_check(),
         payment_check(payment),
         tether_to_issue.store(payment.get().amount() * App.globalGet(issue_rate) / microAlgosPerAlgo),
         If(tether_to_issue.load() == Int(0)).Then(Reject()),
-        payment_to_refund.store(payment.get().amount() - (tether_to_issue.load() * microAlgosPerAlgo / App.globalGet(issue_rate))),
-        If(payment_to_refund.load() > Int(0)).Then(
-            Seq(
-                InnerTxnBuilder.Begin(),
-                InnerTxnBuilder.SetFields({
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.amount: payment_to_refund.load(),
-                    TxnField.receiver: Txn.sender(),
-                }),
-            )
-        ),
         App.globalPut(total_issued, App.globalGet(total_issued) + tether_to_issue.load()),
         App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) + tether_to_issue.load()),
+        
+        # refund excess payment if possible
+        payment_to_refund.store(payment.get().amount() - (tether_to_issue.load() * microAlgosPerAlgo / App.globalGet(issue_rate))),
+        If(payment_to_refund.load() == Int(0)).Then(Approve()),
+        acc_balance.store(Balance(Global.current_application_address())),
+        If(acc_balance.load() < payment_to_refund.load() + MinBalance(Global.current_application_address()) + Global.min_txn_fee())
+            .Then(Approve()),
+        
+        # there is enough balance to refund
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields({
+            TxnField.type_enum: TxnType.Payment,
+            TxnField.amount: payment_to_refund.load(),
+            TxnField.receiver: Txn.sender(),
+        }),
+        InnerTxnBuilder.Submit(),
         Approve()
     )
 
