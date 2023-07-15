@@ -27,8 +27,8 @@ aUSDT_balance = Bytes("aUSDT_balance") # stored as mili aUSDT where 1 mili aUSDT
 handle_creation = Seq(
     App.globalPut(total_issued, Int(0)),
     App.globalPut(paused, Int(0)),
-    App.globalPut(issue_rate, Int(102)), # 1 Algo = 0.102 aUSDT or 1 microAlgo = 102 mili aUSDT
-    App.globalPut(redeem_rate, Int(107)), # 
+    App.globalPut(issue_rate, Int(105)), # 1 Algo = 0.105 aUSDT or 1 Algo = 105 mili aUSDT
+    App.globalPut(redeem_rate, Int(115)), # 
     Approve()
 )
 
@@ -55,38 +55,40 @@ def only_creator():
 def pause_check():
     return If(App.globalGet(paused) == Int(1)).Then(Reject())
 
-@router.method
-def pause():
-    return Seq(
-        only_creator(),
-        App.globalPut(paused, Int(1)),
-        Approve()
-    )
+# @router.method
+# def pause():
+#     return Seq(
+#         only_creator(),
+#         App.globalPut(paused, Int(1)),
+#         Approve()
+#     )
 
-@router.method
-def unpause():
-    return Seq(
-        only_creator(),
-        App.globalPut(paused, Int(0)),
-        Approve()
-    )
+# @router.method
+# def unpause():
+#     return Seq(
+#         only_creator(),
+#         App.globalPut(paused, Int(0)),
+#         Approve()
+#     )
 
-@router.method
-def set_exchange_rate(new_rate: abi.Uint64):
-    absolute_spread = ScratchVar(TealType.uint64)
-    new_issue_rate = ScratchVar(TealType.uint64)
-    return Seq(
-        only_creator(),
-        If(new_rate.get() == Int(0)).Then(Reject()),
-        absolute_spread.store(new_rate.get() / spread),
-        If(absolute_spread.load() == Int(0)).Then(Reject()),
-        new_issue_rate.store(new_rate.get() - absolute_spread.load()),
-        If(new_issue_rate.load() == Int(0)).Then(Reject()),
-        App.globalPut(issue_rate, new_issue_rate.load()),
-        App.globalPut(redeem_rate, new_rate.get() + absolute_spread.load()),
-        Approve()
-    )
+# @router.method
+# def set_exchange_rate(new_rate: abi.Uint64):
+#     absolute_spread = ScratchVar(TealType.uint64)
+#     new_issue_rate = ScratchVar(TealType.uint64)
+#     return Seq(
+#         only_creator(),
+#         If(new_rate.get() == Int(0)).Then(Reject()),
+#         absolute_spread.store(new_rate.get() / spread),
+#         If(absolute_spread.load() == Int(0)).Then(Reject()),
+#         new_issue_rate.store(new_rate.get() - absolute_spread.load()),
+#         If(new_issue_rate.load() == Int(0)).Then(Reject()),
+#         App.globalPut(issue_rate, new_issue_rate.load()),
+#         App.globalPut(redeem_rate, new_rate.get() + absolute_spread.load()),
+#         Approve()
+#     )
 
+
+microAlgosPerAlgo = Int(1000000)
 @router.method
 def issue(payment: abi.PaymentTransaction):
     tether_to_issue = ScratchVar(TealType.uint64)
@@ -94,9 +96,9 @@ def issue(payment: abi.PaymentTransaction):
     return Seq(
         pause_check(),
         payment_check(payment),
-        tether_to_issue.store(payment.get().amount() / App.globalGet(issue_rate)),
+        tether_to_issue.store(payment.get().amount() * App.globalGet(issue_rate) / microAlgosPerAlgo),
         If(tether_to_issue.load() == Int(0)).Then(Reject()),
-        payment_to_refund.store(payment.get().amount() - (tether_to_issue.load() * App.globalGet(issue_rate))),
+        payment_to_refund.store(payment.get().amount() - (tether_to_issue.load() * microAlgosPerAlgo / App.globalGet(issue_rate))),
         If(payment_to_refund.load() > Int(0)).Then(
             Seq(
                 InnerTxnBuilder.Begin(),
@@ -122,12 +124,14 @@ def payment_check(payment: abi.PaymentTransaction):
 
 @router.method
 def redeem(aUSDT_to_redeem: abi.Uint64):
+    micro_algo_to_redeem = ScratchVar(TealType.uint64)
     return Seq(
         pause_check(),
         If(aUSDT_to_redeem.get() == Int(0)).Then(Reject()),
         If(aUSDT_to_redeem.get() > App.localGet(Int(0), aUSDT_balance)).Then(Reject()),
-        App.globalPut(total_issued, App.globalGet(total_issued) - aUSDT_to_redeem.get()),
-        App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) - aUSDT_to_redeem.get()),
+        micro_algo_to_redeem.store(aUSDT_to_redeem.get() * microAlgosPerAlgo / App.globalGet(redeem_rate)),
+        If(micro_algo_to_redeem.load() == Int(0)).Then(Reject()),
+
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.Payment,
@@ -135,6 +139,9 @@ def redeem(aUSDT_to_redeem: abi.Uint64):
             TxnField.receiver: Txn.sender(),
         }),
         InnerTxnBuilder.Submit(),
+
+        App.globalPut(total_issued, App.globalGet(total_issued) - aUSDT_to_redeem.get()),
+        App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) - aUSDT_to_redeem.get()),
         Approve()
     )
 
@@ -170,7 +177,7 @@ Execution
 """
 def main():
     fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
-    n = fuzzer.start(runs=1000)
+    n = fuzzer.start(runs=1000, driver=Driver.COVERAGE)
 
 
 if(__name__ == "__main__"):

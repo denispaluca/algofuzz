@@ -219,9 +219,9 @@ class PaymentMutator:
             dispense(get_algod_client(), self.addr, int(2e8))
             balance, min_balance = get_account_balance(self.addr)
         
-        half_max = (balance - min_balance - 1000) // 10
+        tenth_max = (balance - min_balance - 1000) // 10
         
-        value.amount = random.randint(0, half_max)
+        value.amount = random.randint(0, tenth_max)
         return value
 
 class AccountMutator:
