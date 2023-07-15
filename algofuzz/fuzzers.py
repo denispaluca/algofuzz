@@ -11,6 +11,7 @@ from algofuzz.ContractState import ContractState
 from enum import Enum
 from abc import ABC, abstractmethod
 import curses
+import time
 
 from algofuzz.utils import FakeScr
 
@@ -122,7 +123,7 @@ class ContractFuzzer(ABC):
             self, 
             eval: Callable[[str, ContractState], bool] = None, 
             runs: int = 100, 
-            timeout: int = None,
+            timeout_seconds: int = None,
             driver: Driver = Driver.COMBINED,
             schedule_coef: float = 0.5,
             breakout_coef = 0.1,
@@ -150,18 +151,24 @@ class ContractFuzzer(ABC):
         self._setup()
 
         self.stdscr = curses.initscr()
-        for i in range(runs):
+        self.call_count = 0
+
+        start_time = time.time()
+        while (True):
+            if timeout_seconds is None and self.call_count >= runs:
+                break
+            elif time.time() - start_time > timeout_seconds:
+                break
+
+            self.call_count += 1
             assert_failed = self._call()
 
             if not suppress_output:
-                self._print_status(i, runs)
+                self._print_status(runs if timeout_seconds is None else None)
 
             if not self._eval(eval, assert_failed):
                 break
         
-        self.call_count = i + 1
-            
-
             
     @abstractmethod
     def _setup(self):
@@ -182,12 +189,13 @@ class ContractFuzzer(ABC):
                 
                 return PowerSchedule(trans_coef=trans_coef)
             
-    def _print_status(self, i: int, total_runs) -> None:
+    def _print_status(self, total_runs) -> None:
         mode = "Property Test" if eval is not None else "Assertion"
         self.stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) in {mode} mode\n")
 
-        self.stdscr.addstr(2, 0, f"Calls executed: \t{i+1}/{total_runs}")
-        self.stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls}/{i+1} ({self.rejected_calls/(i+1) * 100:.2f}%)\n")
+        total_runs_str = f"/{total_runs}" if total_runs is not None else ""
+        self.stdscr.addstr(2, 0, f"Calls executed: \t{self.call_count}{total_runs_str}")
+        self.stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls} ({self.rejected_calls/(self.call_count) * 100:.2f}%)\n")
         if self.driver != Driver.STATE:
             self.stdscr.addstr(4, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
         if self.driver != Driver.COVERAGE:
