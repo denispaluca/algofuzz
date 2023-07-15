@@ -1,5 +1,6 @@
 import hashlib
 import json
+from math import isclose
 import pickle
 import random
 from typing import Callable, Set, Union, Sequence, Dict, List
@@ -155,8 +156,9 @@ class ContractFuzzer(ABC):
 
         start_time = time.time()
         while (True):
-            if timeout_seconds is None and self.call_count >= runs:
-                break
+            if timeout_seconds is None:
+                if self.call_count >= runs:
+                    break
             elif time.time() - start_time > timeout_seconds:
                 break
 
