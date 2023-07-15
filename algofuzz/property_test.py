@@ -36,7 +36,5 @@ def count2_always1(contract: ContractState) -> bool:
     
     count2 = contract.get_global(key)
     cond = count2 == 1
-
-    if not cond:
-        print("FAILEDDDDD")
+    
     return cond
