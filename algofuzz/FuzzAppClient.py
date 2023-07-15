@@ -41,7 +41,8 @@ class FuzzAppClient(ApplicationClient):
 
             msgs = txn['app-call-messages']
             if any([msg == 'REJECT' for msg in msgs]):
-                return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in msgs])
+                assertion_failed = self.foundAssertFail(msgs)
+                return None, None, assertion_failed
             
             lines = txn['app-call-trace']
             for line in lines:
@@ -51,11 +52,15 @@ class FuzzAppClient(ApplicationClient):
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
         except AlgodHTTPError as e:
-            return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in e.args])
+            return None, None, self.foundAssertFail(e.args)
         except Exception as e:
             return None, None, False
         
         return result, coverage, False
+
+    @staticmethod
+    def foundAssertFail(msgs):
+        return any([ASSERTION_FAIL_TEXT in msg for msg in msgs])
     
     def call_no_cov(self, method, args):
         txns = self._prepare_txns(method, args)
@@ -63,7 +68,7 @@ class FuzzAppClient(ApplicationClient):
             txid = self.algod_client.send_transactions(txns)
             result = transaction.wait_for_confirmation(self.algod_client, txid, 0)
         except AlgodHTTPError as e:
-            return None, None, any([ASSERTION_FAIL_TEXT in msg for msg in e.args])
+            return None, None, self.foundAssertFail(e.args)
         except Exception as e:
             return None, None, False
         
