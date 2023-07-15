@@ -201,7 +201,7 @@ class PaymentObject:
         self.amount = amount
 
     def __str__(self) -> str:
-        return f"Pay {self.amount/1e7} Algos"
+        return f"Pay {self.amount/1e6} Algos"
     
     def __repr__(self) -> str:
         return self.__str__()
