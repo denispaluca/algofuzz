@@ -6,7 +6,7 @@ from typing import Callable, Set, Union, Sequence, Dict, List
 from algosdk import (abi)
 from algofuzz.FuzzAppClient import FuzzAppClient
 
-from algofuzz.mutate import MethodMutator
+from algofuzz.mutate import AccountMutator, MethodMutator
 from algofuzz.ContractState import ContractState
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -139,6 +139,7 @@ class ContractFuzzer(ABC):
         self.lines_count = self.app_client.approval_line_count
         try:
             self.app_client.opt_in()
+            self.app_client.opt_in_external(AccountMutator.acc)
         except:
             pass
         

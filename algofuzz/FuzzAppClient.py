@@ -22,6 +22,16 @@ class FuzzAppClient(ApplicationClient):
     @property
     def approval_line_count(self) -> int:
         return len(self.approval_disassembled)
+    
+    def opt_in_external(self, account: Account) -> None:
+        old_sender = self.sender
+        old_signer = self.signer
+        self.sender = account.address
+        self.signer = account.signer
+        self.opt_in()
+        self.sender = old_sender
+        self.signer = old_signer
+
 
     def get_method(self, name: str) -> abi.Method:
         return self.app_spec.contract.get_method_by_name(name)
