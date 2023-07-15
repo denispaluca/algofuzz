@@ -1,4 +1,6 @@
 from dotenv import load_dotenv
+
+from algofuzz.utils import get_account_balance
 load_dotenv()
 
 from json import dumps
@@ -141,7 +143,7 @@ def redeem(aUSDT_to_redeem: abi.Uint64):
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.Payment,
-            TxnField.amount: aUSDT_to_redeem.get() * App.globalGet(redeem_rate),
+            TxnField.amount: micro_algo_to_redeem.load(),
             TxnField.receiver: Txn.sender(),
         }),
         InnerTxnBuilder.Submit(),
@@ -182,7 +184,7 @@ def eval(address: str, state: ContractState) -> bool:
 Execution
 """
 def main():
-    fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
+    fuzzer = PartialFuzzer(FuzzAppClient.from_compiled(*compile()))
     n = fuzzer.start(runs=1000, driver=Driver.COVERAGE)
 
 
