@@ -20,31 +20,34 @@ standard = Bytes("standard")
 name = Bytes("name")
 symbol = Bytes("symbol")
 decimals = Bytes("decimals")
-total_supply = Bytes("total_supply")
+supply = Bytes("supply")
 
 """LOCAL"""
 balance_of = Bytes("balance_of")
 allowance_for = Bytes("allowance_for")
 allowance = Bytes("allowance")
 
+
+initial_balance = Int(10000 * 10**6)
+
 handle_creation = Seq(
-    App.globalPut(total_supply, Int(100000)),
+    App.globalPut(supply, initial_balance),
     App.globalPut(standard, Bytes("Token 0.1")),
-    App.globalPut(name, Bytes("TESTBtfund.ru")),
-    App.globalPut(symbol, Bytes("TST")),
-    App.globalPut(decimals, Int(0)),
+    App.globalPut(name, Bytes("PLU Test Token")),
+    App.globalPut(symbol, Bytes("PLU")),
+    App.globalPut(decimals, Int(6)),
     Approve()
 )
 
 handle_optin = Seq(
     If(Txn.sender() == Global.creator_address()).Then(
-        App.localPut(Int(0), balance_of, Int(100000))
+        App.localPut(Int(0), balance_of, initial_balance)
     ).Else(App.localPut(Int(0), balance_of, Int(0))),
     Approve()
 )
 
 router = Router(
-    "MyToken_contract",
+    "Token_contract",
     BareCallActions(
     no_op=OnCompleteAction.create_only(handle_creation),
     opt_in=OnCompleteAction.call_only(handle_optin),
@@ -56,7 +59,7 @@ router = Router(
 )
 
 @router.method
-def transfer(to: abi.Account, value: abi.Uint64):
+def transfer(to: abi.Account, value: abi.Uint64, ):
     return Seq(
         If(App.localGet(Int(0), balance_of) < value.get()).Then(Reject()),
         # check for overflow
@@ -66,24 +69,7 @@ def transfer(to: abi.Account, value: abi.Uint64):
         Approve()
     )
 
-
 @router.method
-def approve(spender: abi.Account, value: abi.Uint64, *, output: abi.Bool):
-    return Seq(
-        App.localPut(Int(0), allowance_for, spender.address()),
-        App.localPut(Int(0), allowance, value.get()),
-        output.set(True)
-    )
-
-# @router.method
-# def approveAndCall(spender: abi.Account, value: abi.Uint64, extra_data: Bytes):
-#     return Seq(
-#         App.localPut(Int(0), allowance_for, spender.address()),
-#         App.localPut(spender.address(), allowance, value.get()),
-#         App.localPut(spender.address(), Bytes("receive_token"), extra_data),
-#         Approve()
-#     )
-
 def transfer_from(_from: abi.Account, to: abi.Account, value: abi.Uint64):
     return Seq(
         If(App.localGet(_from.address(), balance_of) < value.get()).Then(Reject()),
@@ -98,6 +84,7 @@ def transfer_from(_from: abi.Account, to: abi.Account, value: abi.Uint64):
         App.localPut(_from.address(), allowance, App.localGet(_from.address(), allowance) - value.get()),
         Approve()
     )
+
 
 schema = (2,3,2,1)
 
