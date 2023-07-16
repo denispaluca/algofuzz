@@ -42,8 +42,5 @@ class ContractState:
     def get_local(self, account_address: str, key: str) -> str | int:
         return self._local_state[account_address][key]
     
-    def get_receiver(self) -> str:
-        return AccountMutator.acc.address
-
     def get_creator(self):
         return self._creator

@@ -142,7 +142,6 @@ class ContractFuzzer(ABC):
         self.lines_count = self.app_client.approval_line_count
         try:
             self.app_client.opt_in()
-            self.app_client.opt_in_external(AccountMutator.acc)
         except:
             pass
         
