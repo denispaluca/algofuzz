@@ -222,15 +222,15 @@ class PaymentMutator:
         return value
 
 class AccountMutator:
-    acc: list[Account] = [get_funded_account()[0] for _ in range(3)]
+    accs: list[Account] = [get_funded_account(get_algod_client()) for _ in range(3)]
 
     def seed(self):
-        return self.acc[0]
+        return self.accs[0]
     
     def mutate(self, acc: Account):
         """Returns same account with 50% chance, otherwise returns random account from list"""
         if random.random() < 0.5:
-            return random.choice(self.acc)
+            return random.choice(self.accs)
         return acc
 
 def get_mutator(arg: ABIType | str, addr: str):

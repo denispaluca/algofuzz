@@ -1,7 +1,7 @@
 from algokit_utils import Account, ApplicationClient, get_algod_client
 from algosdk import abi, atomic_transaction_composer, transaction
 
-from algofuzz.mutate import PaymentObject
+from algofuzz.mutate import AccountMutator, PaymentObject
 from algofuzz.utils import create_app_spec, get_funded_account
 from algosdk.error import AlgodHTTPError
 
@@ -117,11 +117,11 @@ class FuzzAppClient(ApplicationClient):
     def from_compiled(approval: str, clear: str, contract: str, schema) -> "FuzzAppClient":
         app_spec = create_app_spec(approval, clear, contract, schema)
         algod_client = get_algod_client()
-        account, signer = get_funded_account(algod_client)
+        account = AccountMutator().seed()
         app_client = FuzzAppClient(
             algod_client, 
             app_spec, 
             sender= account.address, 
-            signer= signer
+            signer= account.signer
         )
         return app_client
