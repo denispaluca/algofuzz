@@ -85,6 +85,14 @@ def transfer_from(_from: abi.Account, to: abi.Account, value: abi.Uint64):
         Approve()
     )
 
+@router.method
+def approve(spender: abi.Account, value: abi.Uint64, *, output: abi.Bool):
+    return Seq(
+        App.localPut(Int(0), allowance_for, spender.address()),
+        App.localPut(Int(0), allowance, value.get()),
+        output.set(True)
+    )
+
 
 schema = (2,3,2,1)
 
