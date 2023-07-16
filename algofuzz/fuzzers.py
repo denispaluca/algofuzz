@@ -141,7 +141,7 @@ class ContractFuzzer(ABC):
         self.app_client.create()
         self.lines_count = self.app_client.approval_line_count
         try:
-            self.app_client.opt_in()
+            self.app_client.opt_in_all()
         except:
             pass
         
