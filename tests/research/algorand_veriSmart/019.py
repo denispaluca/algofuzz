@@ -54,7 +54,7 @@ handle_optin = Seq(
 )
 
 router = Router(
-    "RiptoBuxToken_contract",
+    "EdgelessToken_contract",
     BareCallActions(
     no_op=OnCompleteAction.create_only(handle_creation),
     opt_in=OnCompleteAction.call_only(handle_optin),
