@@ -2,7 +2,7 @@ from algokit_utils import Account, ApplicationClient, get_algod_client
 from algosdk import abi, atomic_transaction_composer, transaction
 
 from algofuzz.mutate import AccountMutator, PaymentObject
-from algofuzz.utils import create_app_spec, get_funded_account
+from algofuzz.utils import create_app_spec
 from algosdk.error import AlgodHTTPError
 
 ASSERTION_FAIL_TEXT = 'assert failed'
@@ -25,10 +25,9 @@ class FuzzAppClient(ApplicationClient):
 
     def opt_in_all(self) -> None:
         self.opt_in()
-        creator = None
+        creator = AccountMutator().seed()
         for account in AccountMutator.accs:
-            if account.address == self._creator:
-                creator = account
+            if account.address == creator.address:
                 continue
 
             self.change_sender(account)
