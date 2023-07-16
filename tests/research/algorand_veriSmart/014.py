@@ -29,10 +29,10 @@ allowance_for = Bytes("allowance_for")
 allowance = Bytes("allowance")
 
 handle_creation = Seq(
-    App.globalPut(name, Bytes("Waves Community Token")),
-    App.globalPut(symbol, Bytes("WCT")),
-    App.globalPut(decimals, Int(2)),
-    App.globalPut(total_supply, Int(1000000000)),
+    App.globalPut(name, Bytes("Waves Bitcoin Token")),
+    App.globalPut(symbol, Bytes("WBT")),
+    App.globalPut(decimals, Int(8)),
+    App.globalPut(total_supply, Int(2100000000000000)),
     App.globalPut(owner, Global.creator_address()),
 
     Approve()
@@ -46,7 +46,7 @@ handle_optin = Seq(
 )
 
 router = Router(
-    "WavesCommunityToken_contract",
+    "WavesBitcoinToken_contract",
     BareCallActions(
     no_op=OnCompleteAction.create_only(handle_creation),
     opt_in=OnCompleteAction.call_only(handle_optin),
