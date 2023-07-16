@@ -57,15 +57,6 @@ router = Router(
     clear_state=Approve()
 )
 
-
-@router.method
-def replace_owner(new_owner: abi.Account):
-    return Seq(
-        If(Txn.sender() != App.globalGet(owner)).Then(Reject()),
-        App.globalPut(owner, new_owner.address()),
-        Approve()
-    )
-
 @router.method
 def transfer(to: abi.Account, value: abi.Uint64):
     return Seq(
