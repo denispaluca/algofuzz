@@ -146,7 +146,7 @@ class ContractFuzzer(ABC):
             pass
         
         self.contract_state = ContractState(self.app_client)
-        self.contract_state.load(self.app_client.sender)
+        self.contract_state.load()
 
         self._setup()
 
@@ -229,7 +229,7 @@ class ContractFuzzer(ABC):
         if cov is not None:
             self.covered_lines.update(cov)
         
-        loaded = self.contract_state.load(self.app_client.sender) 
+        loaded = self.contract_state.load() 
         transition = loaded if self.driver != Driver.COVERAGE else None
 
         self._update(cov, transition)
