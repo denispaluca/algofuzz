@@ -132,6 +132,7 @@ class ContractFuzzer(ABC):
             suppress_output: bool = False
         ) -> int | None:
 
+        self.eval = eval
         self.driver = driver
         self.schedule_coef = schedule_coef
         self.breakout_coef = breakout_coef
@@ -168,7 +169,7 @@ class ContractFuzzer(ABC):
             if not suppress_output:
                 self._print_status(runs if timeout_seconds is None else None)
 
-            if not self._eval(eval, assert_failed):
+            if not self._eval(assert_failed):
                 break
         
             
@@ -192,7 +193,7 @@ class ContractFuzzer(ABC):
                 return PowerSchedule(trans_coef=trans_coef)
             
     def _print_status(self, total_runs) -> None:
-        mode = "Property Test" if eval is not None else "Assertion"
+        mode = "Property Test" if self.eval is not None else "Assertion"
         self.stdscr.addstr(0, 0, f"Fuzzing contract {self.app_client.app_name} (id: {self.app_client.app_id}) in {mode} mode\n")
 
         total_runs_str = f"/{total_runs}" if total_runs is not None else ""
@@ -206,11 +207,11 @@ class ContractFuzzer(ABC):
         self.stdscr.refresh()
 
 
-    def _eval(self, eval, assertion_failed):
-        if eval is None:
+    def _eval(self, assertion_failed):
+        if self.eval is None:
             return not assertion_failed
         
-        eval_res = eval(self.app_client.sender, self.contract_state)
+        eval_res = self.eval(self.app_client.sender, self.contract_state)
         return eval_res
 
     def _call(self) -> bool:
