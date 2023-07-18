@@ -16,26 +16,49 @@ CONTRACT
 """
 
 """GLOBAL"""
-total_issued = Bytes("total_issued")
+# Ownable
+owner = Bytes("owner")
+# ERC20Basic
+total_supply = Bytes("total_supply")
+# BasicToken
+basis_points_rate = Bytes("basis_points_rate")
+maximum_fee = Bytes("maximum_fee")
+# Pausable
 paused = Bytes("paused")
-issue_rate = Bytes("issue_rate")
-redeem_rate = Bytes("redeem_rate")
-spread = Int(20) # 5% spread or divided by 20
+# Blacklist
+## blacklisted_<address> shows the blacklist status x3
+blacklisted = Bytes("blacklisted_")
+# TetherToken
+name = Bytes("name")
+symbol = Bytes("symbol")
+decimals = Bytes("decimals")
+
+
 
 """LOCAL"""
-aUSDT_balance = Bytes("aUSDT_balance") # stored as mili aUSDT where 1 mili aUSDT = 0.001 aUSDT with 3 decimals
+#BasicToken
+balance_of = Bytes("balance_of")
+#StandardToken
+## allowed_<address> shows the allowance x3
+allowed = Bytes("allowed_")
 
 
+
+initial_supply = Int(100000000000)
 handle_creation = Seq(
-    App.globalPut(total_issued, Int(0)),
+    App.globalPut(owner, Global.creator_address()),
     App.globalPut(paused, Int(0)),
-    App.globalPut(issue_rate, Int(105)), # 1 Algo = 0.105 aUSDT or 1 Algo = 105 mili aUSDT
-    App.globalPut(redeem_rate, Int(115)), # 
+    App.globalPut(name, Bytes("Algo Tether USD")),
+    App.globalPut(symbol, Bytes("aUSDT")),
+    App.globalPut(decimals, Int(6)),
+    App.globalPut(total_supply, initial_supply),
     Approve()
 )
 
 handle_optin = Seq(
-    App.localPut(Int(0), aUSDT_balance, Int(0)),
+    If(Txn.sender() == Global.creator_address())
+        .Then(App.localPut(Int(0), balance_of, initial_supply))
+        .Else(App.localPut(Int(0), balance_of, Int(0))),
     Approve()
 )
 
@@ -51,16 +74,84 @@ router = Router(
     clear_state=Approve()
 )
 
-def only_creator():
-    return If(Txn.sender() != Global.creator_address()).Then(Reject())
+# Ownable
+def only_owner():
+    return If(Txn.sender() != App.globalGet(owner)).Then(Reject())
 
-def pause_check():
-    return If(App.globalGet(paused) == Int(1)).Then(Reject())
+@router.method
+def transfer_ownership(new_owner: abi.Account):
+    return Seq(
+        only_owner(),
+        App.globalPut(owner, new_owner.address()),
+        Approve()
+    )
+
+# BasicToken
+@router.method
+def transfer(to: abi.Account, value: abi.Uint64):
+    fee = ScratchVar(TealType.uint64)
+    send_amount = ScratchVar(TealType.uint64)
+    return Seq(
+        If(value.get() == Int(0)).Then(Reject()),
+        fee.store(value.get() * App.globalGet(basis_points_rate) / Int(10000)),
+        If(fee.load() > App.globalGet(maximum_fee)).Then(fee.store(App.globalGet(maximum_fee))),
+        send_amount.store(value.get() - fee.load()),
+        App.localPut(Int(0), balance_of, App.localGet(Int(0), balance_of) - value.get()),
+        App.localPut(to.address(), balance_of, App.localGet(to.address(), balance_of) + send_amount.load()),
+        If(fee.load() > Int(0)).Then(
+            App.localPut(App.globalGet(owner), balance_of, App.localGet(App.globalGet(owner), balance_of) + fee.load())
+        ),
+        Approve()
+    )
+
+
+
+# StandardToken
+@router.method
+def transfer_from(from_: abi.Account, to: abi.Account, value: abi.Uint64):
+    allowance = ScratchVar(TealType.uint64)
+    fee = ScratchVar(TealType.uint64)
+    send_amount = ScratchVar(TealType.uint64)
+    return Seq(
+        If(value.get() == Int(0)).Then(Reject()),
+        fee.store(value.get() * App.globalGet(basis_points_rate) / Int(10000)),
+        If(fee.load() > App.globalGet(maximum_fee)).Then(fee.store(App.globalGet(maximum_fee))),
+        
+        allowance.store(App.localGet(from_.address(), allowed_key())),
+        
+        App.localPut(from_.address(), allowed_key(), allowance.load() - value.get()),
+        App.localPut(from_.address(), balance_of, App.localGet(from_.address(), balance_of) - value.get()),
+        send_amount.store(value.get() - fee.load()),
+        App.localPut(to.address(), balance_of, App.localGet(to.address(), balance_of) + send_amount.load()),
+        If(fee.load() > Int(0)).Then(
+            App.localPut(App.globalGet(owner), balance_of, App.localGet(App.globalGet(owner), balance_of) + fee.load())
+        ),
+        Approve()
+    )
+
+def allowed_key():
+    return Concat(allowed, Txn.sender())
+
+@router.method
+def approve(spender: abi.Account, value: abi.Uint64):
+    return Seq(
+        App.localPut(Int(0), Concat(allowed, spender.address()), value.get()),
+        Approve()
+    )
+
+
+# Pausable
+def whenNotPaused():
+    return If(App.globalGet(paused) != Int(0)).Then(Reject())
+
+def whenPaused():
+    return If(App.globalGet(paused) != Int(1)).Then(Reject())
 
 @router.method
 def pause():
     return Seq(
-        only_creator(),
+        only_owner(),
+        whenNotPaused(),
         App.globalPut(paused, Int(1)),
         Approve()
     )
@@ -68,102 +159,63 @@ def pause():
 @router.method
 def unpause():
     return Seq(
-        only_creator(),
+        only_owner(),
+        whenPaused(),
         App.globalPut(paused, Int(0)),
         Approve()
     )
 
+# Blacklist
 @router.method
-def set_exchange_rate(new_rate: abi.Uint64):
-    absolute_spread = ScratchVar(TealType.uint64)
-    new_issue_rate = ScratchVar(TealType.uint64)
+def add_blacklist(evilUser: abi.Account):
     return Seq(
-        only_creator(),
-        If(new_rate.get() == Int(0)).Then(Reject()),
-        absolute_spread.store(new_rate.get() / spread),
-        If(absolute_spread.load() == Int(0)).Then(Reject()),
-        new_issue_rate.store(new_rate.get() - absolute_spread.load()),
-        If(new_issue_rate.load() == Int(0)).Then(Reject()),
-        App.globalPut(issue_rate, new_issue_rate.load()),
-        App.globalPut(redeem_rate, new_rate.get() + absolute_spread.load()),
-        Approve()
-    )
-
-
-microAlgosPerAlgo = Int(1000000)
-@router.method
-def issue(payment: abi.PaymentTransaction):
-    tether_to_issue = ScratchVar(TealType.uint64)
-    payment_to_refund = ScratchVar(TealType.uint64)
-    acc_balance = ScratchVar(TealType.uint64)
-    return Seq(
-        pause_check(),
-        payment_check(payment),
-        tether_to_issue.store(payment.get().amount() * App.globalGet(issue_rate) / microAlgosPerAlgo),
-        If(tether_to_issue.load() == Int(0)).Then(Reject()),
-        App.globalPut(total_issued, App.globalGet(total_issued) + tether_to_issue.load()),
-        App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) + tether_to_issue.load()),
-        
-        # refund excess payment if possible
-        payment_to_refund.store(payment.get().amount() - (tether_to_issue.load() * microAlgosPerAlgo / App.globalGet(issue_rate))),
-        If(payment_to_refund.load() == Int(0)).Then(Approve()),
-        acc_balance.store(Balance(Global.current_application_address())),
-        If(acc_balance.load() < payment_to_refund.load() + MinBalance(Global.current_application_address()) + Global.min_txn_fee())
-            .Then(Approve()),
-        
-        # there is enough balance to refund
-        InnerTxnBuilder.Begin(),
-        InnerTxnBuilder.SetFields({
-            TxnField.type_enum: TxnType.Payment,
-            TxnField.amount: payment_to_refund.load(),
-            TxnField.receiver: Txn.sender(),
-        }),
-        InnerTxnBuilder.Submit(),
-        Approve()
-    )
-
-
-def payment_check(payment: abi.PaymentTransaction):
-    return Seq(
-        If(payment.get().receiver() != Global.current_application_address()).Then(Reject()),
-        If(payment.get().close_remainder_to() != Global.zero_address()).Then(Reject()),
-        If(payment.get().amount() == Int(0)).Then(Reject())
-    )
-
-@router.method
-def redeem(aUSDT_to_redeem: abi.Uint64):
-    micro_algo_to_redeem = ScratchVar(TealType.uint64)
-    return Seq(
-        pause_check(),
-        If(aUSDT_to_redeem.get() == Int(0)).Then(Reject()),
-        If(aUSDT_to_redeem.get() > App.localGet(Int(0), aUSDT_balance)).Then(Reject()),
-        micro_algo_to_redeem.store(aUSDT_to_redeem.get() * microAlgosPerAlgo / App.globalGet(redeem_rate)),
-        If(micro_algo_to_redeem.load() == Int(0)).Then(Reject()),
-
-        InnerTxnBuilder.Begin(),
-        InnerTxnBuilder.SetFields({
-            TxnField.type_enum: TxnType.Payment,
-            TxnField.amount: micro_algo_to_redeem.load(),
-            TxnField.receiver: Txn.sender(),
-        }),
-        InnerTxnBuilder.Submit(),
-
-        App.globalPut(total_issued, App.globalGet(total_issued) - aUSDT_to_redeem.get()),
-        App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) - aUSDT_to_redeem.get()),
+        only_owner(),
+        App.globalPut(Concat(blacklisted, evilUser.address()), Int(1)),
         Approve()
     )
 
 @router.method
-def transfer(aUSDT_to_transfer: abi.Uint64, receiver: abi.Account):
+def remove_blacklist(clearedUser: abi.Account):
     return Seq(
-        pause_check(),
-        If(aUSDT_to_transfer.get() == Int(0)).Then(Reject()),
-        If(aUSDT_to_transfer.get() > App.localGet(Int(0), aUSDT_balance)).Then(Reject()),
-        App.localPut(Int(0), aUSDT_balance, App.localGet(Int(0), aUSDT_balance) - aUSDT_to_transfer.get()),
-        App.localPut(receiver.address(), aUSDT_balance, App.localGet(receiver.address(), aUSDT_balance) + aUSDT_to_transfer.get()),
+        only_owner(),
+        App.globalPut(Concat(blacklisted, clearedUser.address()), Int(0)),
         Approve()
     )
 
+@router.method
+def destroy_black_funds(blackListedUser: abi.Account):
+    return Seq(
+        only_owner(),
+        If(App.globalGet(Concat(blacklisted, blackListedUser.address())) == Int(1))
+            .Then(
+                App.localPut(blackListedUser.address(), balance_of, Int(0)),
+                App.globalPut(total_supply, App.globalGet(total_supply) - App.localGet(blackListedUser.address(), balance_of))
+            ),
+        Approve()
+    )
+
+# TetherToken
+@router.method
+def issue(amount: abi.Uint64):
+    return Seq(
+        only_owner(),
+        If(App.globalGet(total_supply) + amount.get() < amount.get()).Then(Reject()),
+        If(App.localGet(Int(0), balance_of) + amount.get() < amount.get()).Then(Reject()),
+        App.localPut(Int(0), balance_of, App.localGet(Int(0), balance_of) + amount.get()),
+        App.globalPut(total_supply, App.globalGet(total_supply) + amount.get()),
+        Approve()
+    )
+
+@router.method
+def redeem(amount: abi.Uint64):
+    return Seq(
+        only_owner(),
+        If(App.globalGet(total_supply) < amount.get()).Then(Reject()),
+        If(App.localGet(Int(0), balance_of) < amount.get()).Then(Reject()),
+        App.localPut(Int(0), balance_of, App.localGet(Int(0), balance_of) - amount.get()),
+        App.globalPut(total_supply, App.globalGet(total_supply) - amount.get()),
+        Approve()
+    )
 
 schema = (4,0,1,0)
 
