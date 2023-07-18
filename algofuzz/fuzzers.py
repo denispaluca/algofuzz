@@ -4,6 +4,7 @@ from math import isclose
 import pickle
 import random
 from typing import Callable, Set, Union, Sequence, Dict, List
+from algokit_utils import Account
 from algosdk import (abi)
 from algofuzz.FuzzAppClient import FuzzAppClient
 
@@ -114,7 +115,7 @@ class PowerSchedule:
         self.path_frequency[path_id] += 1
         return False
 
-Candidate = tuple[str, list]
+Candidate = tuple[str, list, Account]
 
 class ContractFuzzer(ABC):
     def __init__(self, app_client: FuzzAppClient):
@@ -215,8 +216,9 @@ class ContractFuzzer(ABC):
     def _call(self) -> bool:
         """Makes a call to the applicaiton with a fuzzed value.
         :return: Boolean indicating whether there was an assertion failure"""
-        method_name, args = self.fuzz()
+        method_name, args, acc = self.fuzz()
         method = self.app_client.get_method(method_name)
+        self.app_client.change_sender(acc)
 
         res, cov, assert_failed = (self.app_client.call_no_cov(method, args) 
             if self.driver == Driver.STATE 
@@ -319,8 +321,14 @@ class PartialFuzzer(ContractFuzzer):
 
 class TotalFuzzer(ContractFuzzer):    
     def _setup(self):
-        self.method_mutators = {method.name: MethodMutator(method, self.app_client.sender) for method in self.app_client.methods}
-        self.seeds = [(method.name, self.method_mutators[method.name].seed()) for method in self.app_client.methods]
+        self.acc_mutator = AccountMutator()
+        self.method_mutators: dict[str, MethodMutator] = {}
+        self.seeds: list[Candidate] = []
+        for method in self.app_client.methods:
+            self.method_mutators[method.name] = MethodMutator(method, self.app_client.sender)
+            for acc in self.acc_mutator.accs:
+                self.seeds.append((method.name, self.method_mutators[method.name].seed(), acc))
+
         self.seed_index = 0
         self.population: list[Seed] = []
         self.schedule = self._create_power_schedule()
@@ -339,7 +347,7 @@ class TotalFuzzer(ContractFuzzer):
 
         return self.inp
     
-    def create_candidate(self):
+    def create_candidate(self) -> Candidate:
         candidate = None
         
         breakout_cond = random.random() > self.breakout_coef
@@ -355,10 +363,11 @@ class TotalFuzzer(ContractFuzzer):
             candidate = self.mutate(candidate)
         return candidate
     
-    def mutate(self, value: tuple[str, list]):
-        method, args = value
+    def mutate(self, value: Candidate) -> Candidate:
+        method, args, acc = value
         mutator = self.method_mutators[method]
-        return (method, mutator.mutate(args))
+        new_acc = self.acc_mutator.mutate(acc)
+        return (method, mutator.mutate(args), new_acc)
 
     def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
         is_new_transition = self.schedule.addTransition(transition) 
