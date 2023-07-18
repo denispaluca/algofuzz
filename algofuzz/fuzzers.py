@@ -40,7 +40,9 @@ class ContractFuzzer(ABC):
         self.breakout_coef = breakout_coef
 
         self.rejected_calls = 0
+        self.transitions_count = 0
         self.covered_lines: Set[int] = set()
+        self.cov_paths = 0
         
         self.app_client.create()
         self.lines_count = self.app_client.approval_line_count
@@ -79,10 +81,6 @@ class ContractFuzzer(ABC):
     def _setup(self):
         pass
 
-    @abstractmethod
-    def _count_transitions(self) -> int:
-        pass
-
     def _create_power_schedule(self) -> PowerSchedule:
         match self.driver:
             case Driver.STATE: return PowerSchedule(trans_coef=1.0)
@@ -101,13 +99,25 @@ class ContractFuzzer(ABC):
         total_runs_str = f"/{total_runs}" if total_runs is not None else ""
         self.stdscr.addstr(2, 0, f"Calls executed: \t{self.call_count}{total_runs_str}")
         self.stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls} ({self.rejected_calls/(self.call_count) * 100:.2f}%)\n")
-        if self.driver != Driver.STATE:
-            self.stdscr.addstr(4, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
         if self.driver != Driver.COVERAGE:
             self.transitions_count = self._count_transitions()
-            self.stdscr.addstr(5, 0, f"State transitions: \t{self.transitions_count}\n")
+            self.stdscr.addstr(4, 0, f"State transitions: \t{self.transitions_count}\n")
+        
+        if self.driver != Driver.STATE:
+            self.cov_paths = self._count_cov_paths()
+            self.stdscr.addstr(5, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
+            self.stdscr.addstr(6, 0, f"Unique coverage paths: \t{self.cov_paths}")
+
         self.stdscr.refresh()
 
+    
+    @abstractmethod
+    def _count_transitions(self) -> int:
+        pass
+
+    @abstractmethod
+    def _count_cov_paths(self) -> int:
+        pass
 
     def _eval(self, assertion_failed):
         if self.eval is None:
@@ -215,6 +225,12 @@ class PartialFuzzer(ContractFuzzer):
         for method_fuzzer in self.method_fuzzers.values():
             transitions.update(method_fuzzer.schedule.transition_frequency.keys())
         return len(transitions)
+    
+    def _count_cov_paths(self) -> int:
+        paths = set()
+        for method_fuzzer in self.method_fuzzers.values():
+            paths.update(method_fuzzer.schedule.path_frequency.keys())
+        return len(paths)
 
     def fuzz(self) -> Candidate:
         method = random.choice(self.app_client.methods)
@@ -244,6 +260,9 @@ class TotalFuzzer(ContractFuzzer):
 
     def _count_transitions(self) -> int:
         return len(self.schedule.transition_frequency.keys())
+    
+    def _count_cov_paths(self) -> int:
+        return len(self.schedule.path_frequency.keys())
 
     def fuzz(self):
         if self.seed_index < len(self.seeds):
