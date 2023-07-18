@@ -1,25 +1,26 @@
 from algokit_utils import AppSpecStateDict, get_algod_client
 from algofuzz.FuzzAppClient import FuzzAppClient
 from algofuzz.mutate import AccountMutator
-from algofuzz.utils import get_application_address
-import base64
 
 
 def dict_list_to_set(dict_list: list[dict]) -> set[dict]:
     return set([frozenset(d.items()) for d in dict_list])
 
+State = dict[bytes | str, bytes | str | int]
 class ContractState:
     def __init__(self, app: FuzzAppClient) -> None:
         self._app = app
         self._address = app.app_address
         self._client = get_algod_client()
-        self._global_state: AppSpecStateDict = {}
-        self._local_state: dict[str, AppSpecStateDict] = {}
+        self._global_state: State = {}
+        self._local_state: dict[str, State] = {}
 
-    def load(self, acc_address) -> tuple[dict, dict]:
+    def load(self) -> tuple[dict, dict]:
         old_state = self.get_state()
         self._global_state = self._app.get_global_state()
-        self._local_state[acc_address] = self._app.get_local_state(acc_address)
+
+        for acc in AccountMutator.accs:
+            self._local_state[acc.address] = self._app.get_local_state(acc.address)
 
         return old_state, self.get_state()
 
@@ -42,8 +43,5 @@ class ContractState:
     def get_local(self, account_address: str, key: str) -> str | int:
         return self._local_state[account_address][key]
     
-    def get_receiver(self) -> str:
-        return AccountMutator.acc.address
-
     def get_creator(self):
         return self._creator

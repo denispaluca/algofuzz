@@ -1,8 +1,8 @@
 from algokit_utils import Account, ApplicationClient, get_algod_client
 from algosdk import abi, atomic_transaction_composer, transaction
 
-from algofuzz.mutate import PaymentObject
-from algofuzz.utils import create_app_spec, get_funded_account
+from algofuzz.mutate import AccountMutator, PaymentObject
+from algofuzz.utils import create_app_spec
 from algosdk.error import AlgodHTTPError
 
 ASSERTION_FAIL_TEXT = 'assert failed'
@@ -22,16 +22,22 @@ class FuzzAppClient(ApplicationClient):
     @property
     def approval_line_count(self) -> int:
         return len(self.approval_disassembled)
+
+    def opt_in_all(self) -> None:
+        self.opt_in()
+        creator = AccountMutator().seed()
+        for account in AccountMutator.accs:
+            if account.address == creator.address:
+                continue
+
+            self.change_sender(account)
+            self.opt_in()
+
+        self.change_sender(creator)
     
-    def opt_in_external(self, account: Account) -> None:
-        old_sender = self.sender
-        old_signer = self.signer
+    def change_sender(self, account: Account) -> None:
         self.sender = account.address
         self.signer = account.signer
-        self.opt_in()
-        self.sender = old_sender
-        self.signer = old_signer
-
 
     def get_method(self, name: str) -> abi.Method:
         return self.app_spec.contract.get_method_by_name(name)
@@ -117,11 +123,11 @@ class FuzzAppClient(ApplicationClient):
     def from_compiled(approval: str, clear: str, contract: str, schema) -> "FuzzAppClient":
         app_spec = create_app_spec(approval, clear, contract, schema)
         algod_client = get_algod_client()
-        account, signer = get_funded_account(algod_client)
+        account = AccountMutator().seed()
         app_client = FuzzAppClient(
             algod_client, 
             app_spec, 
             sender= account.address, 
-            signer= signer
+            signer= account.signer
         )
         return app_client

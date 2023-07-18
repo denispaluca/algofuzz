@@ -128,10 +128,10 @@ def dispense(algod_client: algod.AlgodClient, address: str, amount: int) -> None
     txid = algod_client.send_transaction(ptxn)
     transaction.wait_for_confirmation(algod_client, txid, 0)
 
-def get_funded_account(algod_client: algod.AlgodClient) -> tuple[Account, AccountTransactionSigner]:
+def get_funded_account(algod_client: algod.AlgodClient) -> Account:
     account = Account.new_account()
     dispense(algod_client, account.address, int(2e8))
-    return account, AccountTransactionSigner(account.private_key)
+    return account
     
 def create_app_spec(approval: str, clear: str, contract: str, schema: tuple[int, int, int, int]) -> ApplicationSpecification:
     return ApplicationSpecification(

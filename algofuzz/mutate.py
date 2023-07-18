@@ -1,5 +1,5 @@
 import random
-from algokit_utils import get_algod_client
+from algokit_utils import Account, get_algod_client
 from algosdk.abi import *
 
 from algofuzz.utils import dispense, get_account_balance, get_funded_account
@@ -222,13 +222,16 @@ class PaymentMutator:
         return value
 
 class AccountMutator:
-    acc = get_funded_account(get_algod_client())[0]
+    accs: list[Account] = [get_funded_account(get_algod_client()) for _ in range(3)]
 
     def seed(self):
-        return self.acc
+        return self.accs[0]
     
-    def mutate(self, acc):
-        return self.acc
+    def mutate(self, acc: Account):
+        """Returns same account with 50% chance, otherwise returns random account from list"""
+        if random.random() < 0.5:
+            return random.choice(self.accs)
+        return acc
 
 def get_mutator(arg: ABIType | str, addr: str):
     if isinstance(arg, UintType):
