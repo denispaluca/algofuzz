@@ -217,7 +217,7 @@ def redeem(amount: abi.Uint64):
         Approve()
     )
 
-schema = (4,0,1,0)
+schema = (8,3,4,0)
 
 def compile():
     approval, clear, contract = router.compile_program(version=8)
