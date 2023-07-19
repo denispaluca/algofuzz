@@ -2,12 +2,12 @@ import time
 from pathlib import Path
 
 class DataDumper:
-    def __init__(self, path: Path, interval: int, is_minute_interval: bool):
+    def __init__(self, path: Path, interval: int, is_time_interval: bool):
         self.path = path
-        self.interval = interval
-        self.is_minute_interval = is_minute_interval
+        self.interval = interval # seconds or calls
+        self.is_time_interval = is_time_interval
         self.file = open(path, "a")
-        self.file.write("lines_covered, coverage, covered_paths, transitions, rejected_calls, call_count\n")
+        self.file.write("lines_covered, coverage, covered_paths, transitions, rejected_calls, call_count, exec_time\n")
         self.last_time = None
 
     def dump(
@@ -19,18 +19,19 @@ class DataDumper:
         rejected_calls: int,
         call_count: int
     ):
-        if(self.last_time is None):
-            self.last_time = time.time()
-
         def write_line():
-            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count}\n")
+            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count}, {time.time() - self.first_time} \n")
         
-        if self.is_minute_interval:
+        if(self.last_time is None):
+            self.first_time = time.time()
+            self.last_time = self.first_time
+            write_line()
+            return
+
+        
+        if self.is_time_interval:
             time_passed = time.time() - self.last_time
-            minutes = int(time_passed / 60)
-            if minutes == 0: 
-                return
-            if minutes % self.interval != 0:
+            if time_passed < self.interval:
                 return
             
             write_line()
