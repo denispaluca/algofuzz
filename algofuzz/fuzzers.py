@@ -3,6 +3,7 @@ from typing import Callable, Set
 from algokit_utils import Account
 from algosdk import (abi)
 from algofuzz.FuzzAppClient import FuzzAppClient
+from algofuzz.dumper import DataDumper
 
 from algofuzz.mutate import AccountMutator, MethodMutator
 from algofuzz.ContractState import ContractState
@@ -31,13 +32,15 @@ class ContractFuzzer(ABC):
             driver: Driver = Driver.COMBINED,
             schedule_coef: float = 0.5,
             breakout_coef = 0.1,
-            suppress_output: bool = False
+            suppress_output: bool = False,
+            dumper: DataDumper = None
         ) -> int | None:
 
         self.eval = eval
         self.driver = driver
         self.schedule_coef = schedule_coef
         self.breakout_coef = breakout_coef
+        self.dumper = dumper
 
         self.rejected_calls = 0
         self.transitions_count = 0
@@ -72,6 +75,8 @@ class ContractFuzzer(ABC):
 
             if not suppress_output:
                 self._print_status(runs if timeout_seconds is None else None)
+            
+            self._dump()
 
             if not self._eval(assert_failed):
                 break
@@ -110,6 +115,21 @@ class ContractFuzzer(ABC):
 
         self.stdscr.refresh()
 
+    def _dump(self) -> None:
+        if self.dumper is None:
+            return
+
+        self.dumper.dump(
+            covered_line_count=len(self.covered_lines),
+            coverage=len(self.covered_lines) / self.lines_count * 100,
+            covered_paths=self.cov_paths,
+            transitions=self.transitions_count,
+            rejected_calls=self.rejected_calls,
+            call_count=self.call_count
+        )
+    
+    def _line_summary(self) -> str:
+        return f"{self.call_count}, {len(self.covered_lines) / self.lines_count * 100:.2f}, {self.cov_paths}, {self.transitions_count}, {self.rejected_calls}"
     
     @abstractmethod
     def _count_transitions(self) -> int:
