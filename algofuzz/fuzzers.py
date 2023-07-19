@@ -127,10 +127,7 @@ class ContractFuzzer(ABC):
             rejected_calls=self.rejected_calls,
             call_count=self.call_count
         )
-    
-    def _line_summary(self) -> str:
-        return f"{self.call_count}, {len(self.covered_lines) / self.lines_count * 100:.2f}, {self.cov_paths}, {self.transitions_count}, {self.rejected_calls}"
-    
+         
     @abstractmethod
     def _count_transitions(self) -> int:
         pass
