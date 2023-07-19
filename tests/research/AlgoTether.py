@@ -47,11 +47,13 @@ allowed = Bytes("allowed_")
 initial_supply = Int(100000000000)
 handle_creation = Seq(
     App.globalPut(owner, Global.creator_address()),
+    App.globalPut(total_supply, initial_supply),
+    App.globalPut(basis_points_rate, Int(0)),
+    App.globalPut(maximum_fee, Int(0)),
     App.globalPut(paused, Int(0)),
     App.globalPut(name, Bytes("Algo Tether USD")),
     App.globalPut(symbol, Bytes("aUSDT")),
     App.globalPut(decimals, Int(6)),
-    App.globalPut(total_supply, initial_supply),
     Approve()
 )
 
@@ -216,6 +218,17 @@ def redeem(amount: abi.Uint64):
         If(App.localGet(Int(0), balance_of) < amount.get()).Then(Reject()),
         App.localPut(Int(0), balance_of, App.localGet(Int(0), balance_of) - amount.get()),
         App.globalPut(total_supply, App.globalGet(total_supply) - amount.get()),
+        Approve()
+    )
+
+@router.method
+def set_params(new_basis_points: abi.Uint64, new_max_fee: abi.Uint64):
+    return Seq(
+        only_owner(),
+        If(new_basis_points.get() >= Int(20)).Then(Reject()),
+        If(new_max_fee.get() >= Int(50)).Then(Reject()),
+        App.globalPut(basis_points_rate, new_basis_points.get()),
+        App.globalPut(maximum_fee, new_max_fee.get() * (Int(10) ** App.globalGet(decimals))),
         Approve()
     )
 
