@@ -92,6 +92,7 @@ def transfer(to: abi.Account, value: abi.Uint64):
     fee = ScratchVar(TealType.uint64)
     send_amount = ScratchVar(TealType.uint64)
     return Seq(
+        whenNotPaused(),
         If(value.get() == Int(0)).Then(Reject()),
         fee.store(value.get() * App.globalGet(basis_points_rate) / Int(10000)),
         If(fee.load() > App.globalGet(maximum_fee)).Then(fee.store(App.globalGet(maximum_fee))),
@@ -113,6 +114,7 @@ def transfer_from(from_: abi.Account, to: abi.Account, value: abi.Uint64):
     fee = ScratchVar(TealType.uint64)
     send_amount = ScratchVar(TealType.uint64)
     return Seq(
+        whenNotPaused(),
         If(value.get() == Int(0)).Then(Reject()),
         fee.store(value.get() * App.globalGet(basis_points_rate) / Int(10000)),
         If(fee.load() > App.globalGet(maximum_fee)).Then(fee.store(App.globalGet(maximum_fee))),
