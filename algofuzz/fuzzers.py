@@ -221,14 +221,16 @@ class MethodFuzzer:
         return (new_args, new_acc)
     
     def update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
-        is_new_coverage = self.schedule.addPath(cov)
-        is_new_transition = self.schedule.addTransition(transition)
+        is_new_transition, transition_id = self.schedule.addTransition(transition) 
+        is_new_coverage, path_id = self.schedule.addPath(cov)
 
-        if is_new_transition or is_new_coverage:
+        if is_new_coverage or is_new_transition:
             seed = Seed(self.inp)
             seed.transition = transition
+            seed.transition_id = transition_id
             seed.coverage = cov
-            self.population.append(seed)
+            seed.path_id = path_id
+            self.population.append(seed) 
 
 class PartialFuzzer(ContractFuzzer):
     def _setup(self):
@@ -315,11 +317,13 @@ class TotalFuzzer(ContractFuzzer):
         return (method, mutator.mutate(args), new_acc)
 
     def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
-        is_new_transition = self.schedule.addTransition(transition) 
-        is_new_coverage = self.schedule.addPath(cov)
+        is_new_transition, transition_id = self.schedule.addTransition(transition) 
+        is_new_coverage, path_id = self.schedule.addPath(cov)
 
         if is_new_coverage or is_new_transition:
             seed = Seed(self.inp)
             seed.transition = transition
+            seed.transition_id = transition_id
             seed.coverage = cov
+            seed.path_id = path_id
             self.population.append(seed) 

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from algokit_utils import AppSpecStateDict, get_algod_client
 from algofuzz.FuzzAppClient import FuzzAppClient
 from algofuzz.mutate import AccountMutator
@@ -26,8 +27,8 @@ class ContractState:
 
     def get_state(self) -> dict:
         return {
-            'global': self._global_state,
-            'local': self._local_state
+            'global': self._global_state.copy(),
+            'local': deepcopy(self._local_state)
         }
 
     def exists_global(self, key: str) -> bool:

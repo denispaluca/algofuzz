@@ -13,7 +13,9 @@ class Seed:
         self.data = data
 
         self.coverage: Set[int] = set()
+        self.path_id: str = None
         self.transition: tuple[dict,dict] = None
+        self.transition_id: str = None
         self.distance: Union[int, float] = -1
         self.energy = 0.0
 
@@ -40,25 +42,18 @@ class PowerSchedule:
         self.transition_frequency: Dict = {}
         self.exponent = exponent
         self.trans_coef = trans_coef
+        self.cov_coef = 1 - trans_coef
 
     def assignEnergy(self, population: Sequence[Seed]) -> None:
         for seed in population:
-            transition_id, path_id = None, None
-            if seed.transition is not None:
-                transition_id = get_transition_id(seed.transition)
-                if transition_id not in self.transition_frequency:
-                    self.transition_frequency[transition_id] = 1
+            trans_freq, path_freq = 0, 0
+            if seed.transition_id is not None:
+                trans_freq = self.transition_frequency[seed.transition_id]
 
-            if seed.coverage is not None:
-                path_id = getPathID(seed.coverage)
-                if path_id not in self.path_frequency:
-                    self.path_frequency[path_id] = 1
-            
-            
+            if seed.path_id is not None:
+                path_freq = self.path_frequency[seed.path_id]
 
-            trans_freq = self.transition_frequency.get(transition_id, 0)
-            path_freq = self.path_frequency.get(path_id, 0)
-            weighted_freqs = self.trans_coef * trans_freq + (1 - self.trans_coef) * path_freq
+            weighted_freqs = self.trans_coef * trans_freq + self.cov_coef * path_freq
             seed.energy = 1 / (weighted_freqs ** self.exponent)
 
     def normalizedEnergy(self, population: Sequence[Seed]) -> List[float]:
@@ -74,26 +69,26 @@ class PowerSchedule:
         seed: Seed = random.choices(population, weights=norm_energy)[0]
         return seed
     
-    def addTransition(self, transition: tuple[dict, dict] | None) -> bool:
+    def addTransition(self, transition: tuple[dict, dict] | None) -> tuple[bool, str]:
         if transition is None:
-            return False
+            return False, None
         
         transition_id = get_transition_id(transition)
         if transition_id not in self.transition_frequency:
             self.transition_frequency[transition_id] = 1
-            return True
+            return True, transition_id
         
         self.transition_frequency[transition_id] += 1
-        return False
+        return False, transition_id
     
-    def addPath(self, path: Set[int] | None) -> bool:
+    def addPath(self, path: Set[int] | None) -> tuple[bool, str]:
         if path is None:
-            return False
+            return False, None
         
         path_id = getPathID(path)
         if path_id not in self.path_frequency:
             self.path_frequency[path_id] = 1
-            return True
+            return True, path_id
         
         self.path_frequency[path_id] += 1
-        return False
+        return False, path_id
