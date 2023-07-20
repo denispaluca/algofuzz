@@ -25,13 +25,10 @@ class DataDumper:
         rejected_calls: int,
         call_count: int
     ):
-        def write_line():
-            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count} \n")
-        
         if(self.last_time is None):
             self.first_time = time.time()
             self.last_time = self.first_time
-            write_line()
+            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count} \n")
             return
 
         
@@ -40,9 +37,9 @@ class DataDumper:
             if time_passed < self.interval:
                 return
             
-            write_line()
+            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count} \n")
             self.last_time = time.time()
             return
         
         if call_count % self.interval == 0:
-            write_line()
+            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count} \n")
