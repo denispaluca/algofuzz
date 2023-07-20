@@ -46,12 +46,8 @@ class PowerSchedule:
 
     def assignEnergy(self, population: Sequence[Seed]) -> None:
         for seed in population:
-            trans_freq, path_freq = 0, 0
-            if seed.transition_id is not None:
-                trans_freq = self.transition_frequency[seed.transition_id]
-
-            if seed.path_id is not None:
-                path_freq = self.path_frequency[seed.path_id]
+            trans_freq = self.transition_frequency[seed.transition_id]
+            path_freq = self.path_frequency[seed.path_id]
 
             weighted_freqs = self.trans_coef * trans_freq + self.cov_coef * path_freq
             seed.energy = 1 / (weighted_freqs ** self.exponent)
@@ -69,10 +65,7 @@ class PowerSchedule:
         seed: Seed = random.choices(population, weights=norm_energy)[0]
         return seed
     
-    def addTransition(self, transition: tuple[dict, dict] | None) -> tuple[bool, str]:
-        if transition is None:
-            return False, None
-        
+    def addTransition(self, transition: tuple[dict, dict]) -> tuple[bool, str]:
         transition_id = get_transition_id(transition)
         if transition_id not in self.transition_frequency:
             self.transition_frequency[transition_id] = 1
@@ -81,10 +74,7 @@ class PowerSchedule:
         self.transition_frequency[transition_id] += 1
         return False, transition_id
     
-    def addPath(self, path: Set[int] | None) -> tuple[bool, str]:
-        if path is None:
-            return False, None
-        
+    def addPath(self, path: Set[int]) -> tuple[bool, str]:
         path_id = getPathID(path)
         if path_id not in self.path_frequency:
             self.path_frequency[path_id] = 1
