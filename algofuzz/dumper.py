@@ -26,7 +26,7 @@ class DataDumper:
         call_count: int
     ):
         def write_line():
-            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count}, {time.time() - self.first_time} \n")
+            self.file.write(f"{covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}, {rejected_calls}, {call_count} \n")
         
         if(self.last_time is None):
             self.first_time = time.time()
