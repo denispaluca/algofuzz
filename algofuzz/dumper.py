@@ -6,9 +6,15 @@ class DataDumper:
         self.path = path
         self.interval = interval # seconds or calls
         self.is_time_interval = is_time_interval
-        self.file = open(path, "a")
-        self.file.write("lines_covered, coverage, covered_paths, transitions, rejected_calls, call_count, exec_time\n")
         self.last_time = None
+
+    
+    def create_dump(self, *args):
+        self.file = open(self.path, "a")
+        for arg in args:
+            self.file.write(f"#{arg}\n")
+        self.file.write("lines_covered, coverage, covered_paths, transitions, rejected_calls, call_count, exec_time\n")
+        
 
     def dump(
         self,

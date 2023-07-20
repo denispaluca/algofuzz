@@ -53,6 +53,9 @@ class ContractFuzzer(ABC):
             self.app_client.opt_in_all()
         except:
             pass
+
+        if self.dumper is not None:
+            self.dumper.create_dump(self.app_client.app_id, self.app_client.app_name, self.lines_count, self.driver, self.schedule_coef, self.breakout_coef)
         
         self.contract_state = ContractState(self.app_client)
         self.contract_state.load()
@@ -62,6 +65,7 @@ class ContractFuzzer(ABC):
         self.stdscr = curses.initscr()
         self.call_count = 0
 
+        self._dump()
         start_time = time.time()
         while (True):
             if timeout_seconds is None:
