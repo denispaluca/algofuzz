@@ -12,12 +12,12 @@ from algofuzz.dumper import DataDumper
 fuzzers: list[type[ContractFuzzer]] = [PartialFuzzer, TotalFuzzer]
 
 def main():
-    modules = get_verismart_modules()
     half_hour = 30 * 60
     evaluate_contract(AlgoTether, half_hour, 6)
     evaluate_contract(ExchangeToken, half_hour, 6)
 
     mins_10 = 10 * 60
+    modules = get_verismart_modules()
     for module in modules:
         evaluate_contract(module, mins_10, 6)
 
