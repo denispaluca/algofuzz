@@ -62,7 +62,8 @@ class ContractFuzzer(ABC):
 
         self._setup()
 
-        self.stdscr = curses.initscr()
+        if not suppress_output:
+            self.stdscr = curses.initscr()
         self.call_count = 0
 
         self._dump()

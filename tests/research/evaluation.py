@@ -34,19 +34,25 @@ def evaluate_contract(contract, timeout_seconds, reps):
     for chosen_fuzzer in fuzzers:
         for j in range(3):
             driver = Driver(j)
+            info = f"{contract.__name__}_{chosen_fuzzer.__name__}_{driver}"
+            print(f"{info}: ", end=' ', flush=True)
             for i in range(reps):
                 client = FuzzAppClient.from_compiled(*compiled)
                 fuzzer = chosen_fuzzer(client)
-                dumper = DataDumper(f"benchmarks/{contract.__name__}_{fuzzer.__class__.__name__}_{driver}_{i}.csv", 1, False)
+                dumper = DataDumper(f"benchmarks/{info}_{i}.csv", 1, False)
                 fuzzer.start(
                     timeout_seconds=timeout_seconds, 
                     driver=driver, 
                     dumper=dumper,
-                    # suppress_output=True
+                    suppress_output=True
                 )
 
                 dumper.file.close()
+                print("#", end='', flush=True)
+            print()
+            
 
+    print()
 
 
     
