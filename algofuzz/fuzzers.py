@@ -76,6 +76,8 @@ class ContractFuzzer(ABC):
 
             self.call_count += 1
             assert_failed = self._call()
+            self.transitions_count = self._count_transitions()
+            self.cov_paths = self._count_cov_paths()
 
             if not suppress_output:
                 self._print_status(runs if timeout_seconds is None else None)
@@ -108,14 +110,9 @@ class ContractFuzzer(ABC):
         total_runs_str = f"/{total_runs}" if total_runs is not None else ""
         self.stdscr.addstr(2, 0, f"Calls executed: \t{self.call_count}{total_runs_str}")
         self.stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls} ({self.rejected_calls/(self.call_count) * 100:.2f}%)\n")
-        if self.driver != Driver.COVERAGE:
-            self.transitions_count = self._count_transitions()
-            self.stdscr.addstr(4, 0, f"State transitions: \t{self.transitions_count}\n")
-        
-        if self.driver != Driver.STATE:
-            self.cov_paths = self._count_cov_paths()
-            self.stdscr.addstr(5, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
-            self.stdscr.addstr(6, 0, f"Unique coverage paths: \t{self.cov_paths}")
+        self.stdscr.addstr(4, 0, f"State transitions: \t{self.transitions_count}\n")
+        self.stdscr.addstr(5, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
+        self.stdscr.addstr(6, 0, f"Unique coverage paths: \t{self.cov_paths}")
 
         self.stdscr.refresh()
 
@@ -154,20 +151,14 @@ class ContractFuzzer(ABC):
         method = self.app_client.get_method(method_name)
         self.app_client.change_sender(acc)
 
-        res, cov, assert_failed = (self.app_client.call_no_cov(method, args) 
-            if self.driver == Driver.STATE 
-            else self.app_client.call(method, args))
+        res, cov, assert_failed = self.app_client.call(method, args)
 
         if res is None:
             self.rejected_calls += 1
             return assert_failed
         
-        if cov is not None:
-            self.covered_lines.update(cov)
-        
-        loaded = self.contract_state.load() 
-        transition = loaded if self.driver != Driver.COVERAGE else None
-
+        self.covered_lines.update(cov)
+        transition = self.contract_state.load() 
         self._update(cov, transition)
         return False
 
@@ -178,6 +169,12 @@ class ContractFuzzer(ABC):
     @abstractmethod
     def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
         pass
+
+    def _is_interesting(self, is_new_transition: bool, is_new_coverage: bool) -> bool:
+        match self.driver:
+            case Driver.STATE: return is_new_transition
+            case Driver.COVERAGE: return is_new_coverage
+            case Driver.COMBINED: return is_new_transition or is_new_coverage
 
 
 MethodCandidate = tuple[list, Account]
@@ -224,11 +221,11 @@ class MethodFuzzer:
         new_acc = self.acc_mutator.mutate(acc)
         return (new_args, new_acc)
     
-    def update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
+    def update(self, cov: set[int], transition: tuple[dict, dict], is_interesting: Callable[[bool, bool], bool]) -> None:
         is_new_transition, transition_id = self.schedule.addTransition(transition) 
         is_new_coverage, path_id = self.schedule.addPath(cov)
 
-        if is_new_coverage or is_new_transition:
+        if is_interesting(is_new_transition, is_new_coverage):
             seed = Seed(self.inp)
             seed.transition = transition
             seed.transition_id = transition_id
@@ -264,7 +261,7 @@ class PartialFuzzer(ContractFuzzer):
     def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
         method = self.app_client.get_method(self.inp[0])
         method_fuzzer = self.method_fuzzers[method.name]
-        method_fuzzer.update(cov, transition)
+        method_fuzzer.update(cov, transition, self._is_interesting)
 
 
 class TotalFuzzer(ContractFuzzer):    
@@ -324,7 +321,7 @@ class TotalFuzzer(ContractFuzzer):
         is_new_transition, transition_id = self.schedule.addTransition(transition) 
         is_new_coverage, path_id = self.schedule.addPath(cov)
 
-        if is_new_coverage or is_new_transition:
+        if self._is_interesting(is_new_transition, is_new_coverage):
             seed = Seed(self.inp)
             seed.transition = transition
             seed.transition_id = transition_id
