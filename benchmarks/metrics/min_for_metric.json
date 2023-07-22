@@ -8,7 +8,7 @@
     380.4
   ],
   "percentage_rejected": [
-    "TotalFuzzer_Driver.COVERAGE",
+    "TotalFuzzer_Driver.STATE",
     0.12161778873083211
   ],
   "lines_covered": [
