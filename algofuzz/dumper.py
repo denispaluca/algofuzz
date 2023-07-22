@@ -13,7 +13,7 @@ class DataDumper:
         self.file = open(self.path, "a")
         for arg in args:
             self.file.write(f"#{arg}\n")
-        self.file.write("call_count, calls_rejected, percent_rejected, lines_covered, percent_covered, unique_paths, unique_transitions \n")
+        self.file.write("call_count, calls_rejected, percent_rejected, lines_covered, percent_covered, unique_paths, unique_states \n")
         
 
     def dump(
@@ -21,7 +21,7 @@ class DataDumper:
         covered_line_count: int,
         coverage: float,
         covered_paths: int,
-        transitions: int,
+        states: int,
         rejected_calls: int,
         call_count: int
     ):
@@ -30,7 +30,7 @@ class DataDumper:
         if(self.last_time is None):
             self.first_time = time.time()
             self.last_time = self.first_time
-            self.file.write(f"{call_count}, {rejected_calls}, {percent_rejected:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}\n")
+            self.file.write(f"{call_count}, {rejected_calls}, {percent_rejected:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {states}\n")
             return
 
         
@@ -39,9 +39,9 @@ class DataDumper:
             if time_passed < self.interval:
                 return
             
-            self.file.write(f"{call_count}, {rejected_calls}, {rejected_calls / call_count * 100:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}\n")
+            self.file.write(f"{call_count}, {rejected_calls}, {rejected_calls / call_count * 100:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {states}\n")
             self.last_time = time.time()
             return
         
         if call_count % self.interval == 0:
-            self.file.write(f"{call_count}, {rejected_calls}, {rejected_calls / call_count * 100:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {transitions}\n")
+            self.file.write(f"{call_count}, {rejected_calls}, {rejected_calls / call_count * 100:.2f}, {covered_line_count}, {coverage:.2f}, {covered_paths}, {states}\n")

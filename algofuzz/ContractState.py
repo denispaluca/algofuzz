@@ -16,14 +16,13 @@ class ContractState:
         self._global_state: State = {}
         self._local_state: dict[str, State] = {}
 
-    def load(self) -> tuple[dict, dict]:
-        old_state = self.get_state()
+    def load(self) -> dict:
         self._global_state = self._app.get_global_state()
 
         for acc in AccountMutator.accs:
             self._local_state[acc.address] = self._app.get_local_state(acc.address)
 
-        return old_state, self.get_state()
+        return self.get_state()
 
     def get_state(self) -> dict:
         return {

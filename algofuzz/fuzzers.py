@@ -43,7 +43,7 @@ class ContractFuzzer(ABC):
         self.dumper = dumper
 
         self.rejected_calls = 0
-        self.transitions_count = 0
+        self.state_count = 0
         self.covered_lines: Set[int] = set()
         self.cov_paths = 0
         
@@ -77,7 +77,7 @@ class ContractFuzzer(ABC):
 
             self.call_count += 1
             assert_failed = self._call()
-            self.transitions_count = self._count_transitions()
+            self.state_count = self._count_states()
             self.cov_paths = self._count_cov_paths()
 
             if not suppress_output:
@@ -95,14 +95,14 @@ class ContractFuzzer(ABC):
 
     def _create_power_schedule(self) -> PowerSchedule:
         match self.driver:
-            case Driver.STATE: return PowerSchedule(trans_coef=1.0)
-            case Driver.COVERAGE: return PowerSchedule(trans_coef=0.0)
+            case Driver.STATE: return PowerSchedule(state_coef=1.0)
+            case Driver.COVERAGE: return PowerSchedule(state_coef=0.0)
             case Driver.COMBINED: 
-                trans_coef = 0.5
+                state_coef = 0.5
                 if 0.0 <= self.schedule_coef and self.schedule_coef <= 1.0:
-                    trans_coef = self.schedule_coef
+                    state_coef = self.schedule_coef
                 
-                return PowerSchedule(trans_coef=trans_coef)
+                return PowerSchedule(state_coef=state_coef)
             
     def _print_status(self, total_runs) -> None:
         mode = "Property Test" if self.eval is not None else "Assertion"
@@ -111,7 +111,7 @@ class ContractFuzzer(ABC):
         total_runs_str = f"/{total_runs}" if total_runs is not None else ""
         self.stdscr.addstr(2, 0, f"Calls executed: \t{self.call_count}{total_runs_str}")
         self.stdscr.addstr(3, 0, f"Calls rejected: \t{self.rejected_calls} ({self.rejected_calls/(self.call_count) * 100:.2f}%)\n")
-        self.stdscr.addstr(4, 0, f"State transitions: \t{self.transitions_count}\n")
+        self.stdscr.addstr(4, 0, f"Unique states: \t\t{self.state_count}\n")
         self.stdscr.addstr(5, 0, f"Lines covered: \t\t{len(self.covered_lines)}/{self.lines_count} ({len(self.covered_lines) / self.lines_count * 100:.2f}%)")
         self.stdscr.addstr(6, 0, f"Unique coverage paths: \t{self.cov_paths}")
 
@@ -125,13 +125,13 @@ class ContractFuzzer(ABC):
             covered_line_count=len(self.covered_lines),
             coverage=len(self.covered_lines) / self.lines_count * 100,
             covered_paths=self.cov_paths,
-            transitions=self.transitions_count,
+            states=self.state_count,
             rejected_calls=self.rejected_calls,
             call_count=self.call_count
         )
          
     @abstractmethod
-    def _count_transitions(self) -> int:
+    def _count_states(self) -> int:
         pass
 
     @abstractmethod
@@ -159,8 +159,8 @@ class ContractFuzzer(ABC):
             return assert_failed
         
         self.covered_lines.update(cov)
-        transition = self.contract_state.load() 
-        self._update(cov, transition)
+        state = self.contract_state.load() 
+        self._update(cov, state)
         return False
 
     @abstractmethod
@@ -168,14 +168,14 @@ class ContractFuzzer(ABC):
         pass
         
     @abstractmethod
-    def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
+    def _update(self, cov: set[int], state: dict) -> None:
         pass
 
-    def _is_interesting(self, is_new_transition: bool, is_new_coverage: bool) -> bool:
+    def _is_interesting(self, is_new_state: bool, is_new_coverage: bool) -> bool:
         match self.driver:
-            case Driver.STATE: return is_new_transition
+            case Driver.STATE: return is_new_state
             case Driver.COVERAGE: return is_new_coverage
-            case Driver.COMBINED: return is_new_transition or is_new_coverage
+            case Driver.COMBINED: return is_new_state or is_new_coverage
 
 
 MethodCandidate = tuple[list, Account]
@@ -222,15 +222,13 @@ class MethodFuzzer:
         new_acc = self.acc_mutator.mutate(acc)
         return (new_args, new_acc)
     
-    def update(self, cov: set[int], transition: tuple[dict, dict], is_interesting: Callable[[bool, bool], bool]) -> None:
-        is_new_transition, transition_id = self.schedule.addTransition(transition) 
+    def update(self, cov: set[int], state: dict, is_interesting: Callable[[bool, bool], bool]) -> None:
+        is_new_state, state_id = self.schedule.addState(state) 
         is_new_coverage, path_id = self.schedule.addPath(cov)
 
-        if is_interesting(is_new_transition, is_new_coverage):
+        if is_interesting(is_new_state, is_new_coverage):
             seed = Seed(self.inp)
-            seed.transition = transition
-            seed.transition_id = transition_id
-            seed.coverage = cov
+            seed.state_id = state_id
             seed.path_id = path_id
             self.population.append(seed) 
 
@@ -241,11 +239,11 @@ class PartialFuzzer(ContractFuzzer):
             for method in self.app_client.methods
         }
 
-    def _count_transitions(self) -> int:
-        transitions = set()
+    def _count_states(self) -> int:
+        states = set()
         for method_fuzzer in self.method_fuzzers.values():
-            transitions.update(method_fuzzer.schedule.transition_frequency.keys())
-        return len(transitions)
+            states.update(method_fuzzer.schedule.state_frequency.keys())
+        return len(states)
     
     def _count_cov_paths(self) -> int:
         paths = set()
@@ -259,10 +257,10 @@ class PartialFuzzer(ContractFuzzer):
         self.inp: Candidate = method.name, *method_fuzzer.fuzz()
         return self.inp
     
-    def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
+    def _update(self, cov: set[int], state: dict) -> None:
         method = self.app_client.get_method(self.inp[0])
         method_fuzzer = self.method_fuzzers[method.name]
-        method_fuzzer.update(cov, transition, self._is_interesting)
+        method_fuzzer.update(cov, state, self._is_interesting)
 
 
 class TotalFuzzer(ContractFuzzer):    
@@ -279,8 +277,8 @@ class TotalFuzzer(ContractFuzzer):
         self.population: list[Seed] = []
         self.schedule = self._create_power_schedule()
 
-    def _count_transitions(self) -> int:
-        return len(self.schedule.transition_frequency.keys())
+    def _count_states(self) -> int:
+        return len(self.schedule.state_frequency.keys())
     
     def _count_cov_paths(self) -> int:
         return len(self.schedule.path_frequency.keys())
@@ -318,14 +316,12 @@ class TotalFuzzer(ContractFuzzer):
         new_acc = self.acc_mutator.mutate(acc)
         return (method, mutator.mutate(args), new_acc)
 
-    def _update(self, cov: set[int], transition: tuple[dict, dict]) -> None:
-        is_new_transition, transition_id = self.schedule.addTransition(transition) 
+    def _update(self, cov: set[int], state: dict) -> None:
+        is_new_state, state_id = self.schedule.addState(state) 
         is_new_coverage, path_id = self.schedule.addPath(cov)
 
-        if self._is_interesting(is_new_transition, is_new_coverage):
+        if self._is_interesting(is_new_state, is_new_coverage):
             seed = Seed(self.inp)
-            seed.transition = transition
-            seed.transition_id = transition_id
-            seed.coverage = cov
+            seed.state_id = state_id
             seed.path_id = path_id
             self.population.append(seed) 

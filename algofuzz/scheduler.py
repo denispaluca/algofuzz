@@ -12,10 +12,8 @@ class Seed:
         """Initialize from seed data"""
         self.data = data
 
-        self.coverage: Set[int] = set()
         self.path_id: str = None
-        self.transition: tuple[dict,dict] = None
-        self.transition_id: str = None
+        self.state_id: str = None
         self.distance: Union[int, float] = -1
         self.energy = 0.0
 
@@ -32,24 +30,24 @@ def getPathID(coverage: set[int]) -> str:
     return hashlib.md5(pickled).hexdigest()
 
 
-def get_transition_id(transition: tuple[dict, dict]) -> str:
-    pickled = json.dumps(transition, sort_keys=True).encode()
+def get_state_id(state: dict) -> str:
+    pickled = json.dumps(state, sort_keys=True).encode()
     return hashlib.md5(pickled).hexdigest()
 
 class PowerSchedule:
-    def __init__(self, exponent: int = 5, trans_coef = 0.5) -> None:
+    def __init__(self, exponent: int = 5, state_coef = 0.5) -> None:
         self.path_frequency: Dict = {}
-        self.transition_frequency: Dict = {}
+        self.state_frequency: Dict = {}
         self.exponent = exponent
-        self.trans_coef = trans_coef
-        self.cov_coef = 1 - trans_coef
+        self.state_coef = state_coef
+        self.cov_coef = 1 - state_coef
 
     def assignEnergy(self, population: Sequence[Seed]) -> None:
         for seed in population:
-            trans_freq = self.transition_frequency[seed.transition_id]
+            state_freq = self.state_frequency[seed.state_id]
             path_freq = self.path_frequency[seed.path_id]
 
-            weighted_freqs = self.trans_coef * trans_freq + self.cov_coef * path_freq
+            weighted_freqs = self.state_coef * state_freq + self.cov_coef * path_freq
             seed.energy = 1 / (weighted_freqs ** self.exponent)
 
     def normalizedEnergy(self, population: Sequence[Seed]) -> List[float]:
@@ -65,14 +63,14 @@ class PowerSchedule:
         seed: Seed = random.choices(population, weights=norm_energy)[0]
         return seed
     
-    def addTransition(self, transition: tuple[dict, dict]) -> tuple[bool, str]:
-        transition_id = get_transition_id(transition)
-        if transition_id not in self.transition_frequency:
-            self.transition_frequency[transition_id] = 1
-            return True, transition_id
+    def addState(self, state: dict) -> tuple[bool, str]:
+        state_id = get_state_id(state)
+        if state_id not in self.state_frequency:
+            self.state_frequency[state_id] = 1
+            return True, state_id
         
-        self.transition_frequency[transition_id] += 1
-        return False, transition_id
+        self.state_frequency[state_id] += 1
+        return False, state_id
     
     def addPath(self, path: Set[int]) -> tuple[bool, str]:
         path_id = getPathID(path)

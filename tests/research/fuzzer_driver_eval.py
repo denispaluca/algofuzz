@@ -37,7 +37,7 @@ def evaluate_contract(contract, timeout_seconds, reps):
                     "lines_covered": len(fuzzer.covered_lines),
                     "percent_covered": len(fuzzer.covered_lines)/fuzzer.lines_count,
                     "unique_paths": fuzzer.cov_paths,
-                    "unique_transitions": fuzzer.transitions_count
+                    "unique_states": fuzzer.state_count
                 })
 
                 print("#", end='', flush=True)
