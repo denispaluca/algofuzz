@@ -1,0 +1,56 @@
+{
+  "PartialFuzzer_Driver.COVERAGE": {
+    "call_count": 5827.8,
+    "rejected_calls": 4414.2,
+    "percentage_rejected": 0.7572060130608361,
+    "lines_covered": 603.8,
+    "percent_covered": 0.7179548156956004,
+    "unique_paths": 14.0,
+    "unique_transitions": 1301.6
+  },
+  "PartialFuzzer_Driver.STATE": {
+    "call_count": 5396.6,
+    "rejected_calls": 4071.8,
+    "percentage_rejected": 0.7544870601123147,
+    "lines_covered": 602.4,
+    "percent_covered": 0.7162901307966706,
+    "unique_paths": 13.8,
+    "unique_transitions": 1220.0
+  },
+  "PartialFuzzer_Driver.COMBINED": {
+    "call_count": 5090.4,
+    "rejected_calls": 3849.8,
+    "percentage_rejected": 0.7561346159236417,
+    "lines_covered": 604.6,
+    "percent_covered": 0.7189060642092746,
+    "unique_paths": 14.2,
+    "unique_transitions": 1139.0
+  },
+  "TotalFuzzer_Driver.COVERAGE": {
+    "call_count": 5427.8,
+    "rejected_calls": 4950.2,
+    "percentage_rejected": 0.9118885666596217,
+    "lines_covered": 553.8,
+    "percent_covered": 0.6585017835909632,
+    "unique_paths": 14.2,
+    "unique_transitions": 425.0
+  },
+  "TotalFuzzer_Driver.STATE": {
+    "call_count": 3125.8,
+    "rejected_calls": 380.4,
+    "percentage_rejected": 0.12161778873083211,
+    "lines_covered": 497.6,
+    "percent_covered": 0.5916765755053508,
+    "unique_paths": 12.0,
+    "unique_transitions": 2739.2
+  },
+  "TotalFuzzer_Driver.COMBINED": {
+    "call_count": 4528.4,
+    "rejected_calls": 4011.0,
+    "percentage_rejected": 0.8856088533811832,
+    "lines_covered": 479.2,
+    "percent_covered": 0.5697978596908443,
+    "unique_paths": 12.6,
+    "unique_transitions": 458.6
+  }
+}

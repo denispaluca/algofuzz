@@ -1,0 +1,30 @@
+{
+  "call_count": [
+    "PartialFuzzer_Driver.COVERAGE",
+    5827.8
+  ],
+  "rejected_calls": [
+    "TotalFuzzer_Driver.COVERAGE",
+    4950.2
+  ],
+  "percentage_rejected": [
+    "TotalFuzzer_Driver.COVERAGE",
+    0.9118885666596217
+  ],
+  "lines_covered": [
+    "PartialFuzzer_Driver.COMBINED",
+    604.6
+  ],
+  "percent_covered": [
+    "PartialFuzzer_Driver.COMBINED",
+    0.7189060642092746
+  ],
+  "unique_paths": [
+    "PartialFuzzer_Driver.COMBINED",
+    14.2
+  ],
+  "unique_transitions": [
+    "TotalFuzzer_Driver.STATE",
+    2739.2
+  ]
+}
