@@ -8,12 +8,23 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Main",
+            "type": "python",
+            "request": "launch",
             "program": "${workspaceFolder}/algofuzz/main.py",
             "args": [
                 "../algo-tut/my-first-router/artifacts/approval.teal",
                 "../algo-tut/my-first-router/artifacts/clear.teal",
                 "../algo-tut/my-first-router/artifacts/contract.json",
-                "2", "0", "0", "0"
+                "2",
+                "0",
+                "0",
+                "0"
             ],
             "console": "integratedTerminal",
             "justMyCode": true

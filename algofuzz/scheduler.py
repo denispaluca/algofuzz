@@ -2,7 +2,7 @@ import pickle
 import random
 import hashlib
 import json
-from typing import Set, Union, Sequence, Dict, List
+from typing import Set, Sequence, Dict, List
 
 
 class Seed:
@@ -12,11 +12,8 @@ class Seed:
         """Initialize from seed data"""
         self.data = data
 
-        self.coverage: Set[int] = set()
         self.path_id: str = None
-        self.transition: tuple[dict,dict] = None
         self.transition_id: str = None
-        self.distance: Union[int, float] = -1
         self.energy = 0.0
 
     def __str__(self):
