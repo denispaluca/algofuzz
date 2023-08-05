@@ -232,6 +232,10 @@ class AccountMutator:
         if random.random() < 0.5:
             return random.choice(self.accs)
         return acc
+    
+    @staticmethod
+    def reset_accs():
+        AccountMutator.accs = [get_funded_account(get_algod_client()) for _ in range(3)]
 
 def get_mutator(arg: ABIType | str, addr: str):
     if isinstance(arg, UintType):
