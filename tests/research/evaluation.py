@@ -17,7 +17,7 @@ fuzzers: list[type[ContractFuzzer]] = [PartialFuzzer, TotalFuzzer]
 def main():
     reps = 10
     half_hour = 30 * 60
-    evaluate_contract(AlgoTether, half_hour, 6)
+    evaluate_contract(AlgoTether, half_hour, 1)
     # evaluate_contract(ExchangeToken, half_hour, reps)
 
     # mins_10 = 10 * 60
@@ -42,15 +42,15 @@ def get_verismart_modules():
 def evaluate_contract(contract, timeout_seconds, reps):
     compiled = contract.compile()
     for chosen_fuzzer in [TotalFuzzer]:
-        for j in [2]:
+        for j in [1]:
             driver = Driver(j)
             info = f"{contract.__name__}_{chosen_fuzzer.__name__}_{driver}"
             print(f"{info}: ", end=" ", flush=True)
             for i in range(reps):
                 AccountMutator.reset_accs()
-                client = FuzzAppClient.from_compiled(*compiled)
+                client = FuzzAppClient.from_compiled(*compiled) 
                 fuzzer = chosen_fuzzer(client)
-                dumper = DataDumper(f"benchmarks/{info}_{i}.csv", 1, False)
+                dumper = DataDumper(f"benchmarks/{info}_{5}.csv", 1, False)
                 fuzzer.start(
                     timeout_seconds=timeout_seconds,
                     driver=driver,
