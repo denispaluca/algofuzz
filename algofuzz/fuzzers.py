@@ -228,9 +228,7 @@ class MethodFuzzer:
 
         if is_interesting(is_new_transition, is_new_coverage):
             seed = Seed(self.inp)
-            seed.transition = transition
             seed.transition_id = transition_id
-            seed.coverage = cov
             seed.path_id = path_id
             self.population.append(seed) 
 
@@ -324,8 +322,6 @@ class TotalFuzzer(ContractFuzzer):
 
         if self._is_interesting(is_new_transition, is_new_coverage):
             seed = Seed(self.inp)
-            seed.transition = transition
             seed.transition_id = transition_id
-            seed.coverage = cov
             seed.path_id = path_id
             self.population.append(seed) 
