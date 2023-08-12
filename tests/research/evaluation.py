@@ -42,7 +42,7 @@ def get_verismart_modules():
 def evaluate_contract(contract, timeout_seconds, reps):
     compiled = contract.compile()
     for chosen_fuzzer in fuzzers:
-        for j in range(2):
+        for j in [2]:
             driver = Driver(j)
             info = f"{contract.__name__}_{chosen_fuzzer.__name__}_{driver}"
             print(f"{info}: ", end=" ", flush=True)
