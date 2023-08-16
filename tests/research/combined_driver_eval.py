@@ -16,7 +16,7 @@ def evaluate_contract(contract, timeout_seconds, reps):
     config_info = {}
     compiled = contract.compile()
     for chosen_fuzzer in fuzzers:
-        for coef in range(1,10):
+        for coef in range(11):
             real_coef = coef/10
             driver = Driver.COMBINED
             info = f"{chosen_fuzzer.__name__}_coef_{real_coef}"
@@ -67,15 +67,15 @@ def evaluate_contract(contract, timeout_seconds, reps):
                 min_for_metric[metric] = (key, averages[key][metric])
     
 
-    file = open("benchmarks/coef/averages.json", "w+")
+    file = open("benchmarks/coef_all/averages.json", "w+")
     file.write(json.dumps(averages, indent=2))
     file.close()
 
-    file = open("benchmarks/coef/max_for_metric.json", "w+")
+    file = open("benchmarks/coef_all/max_for_metric.json", "w+")
     file.write(json.dumps(max_for_metric, indent=2))
     file.close()
 
-    file = open("benchmarks/coef/min_for_metric.json", "w+")
+    file = open("benchmarks/coef_all/min_for_metric.json", "w+")
     file.write(json.dumps(min_for_metric, indent=2))
     file.close()
 
