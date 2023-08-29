@@ -1,0 +1,30 @@
+{
+  "call_count": [
+    "PartialFuzzer_coef_0.0",
+    7648.2
+  ],
+  "rejected_calls": [
+    "PartialFuzzer_coef_0.0",
+    5782.2
+  ],
+  "percentage_rejected": [
+    "TotalFuzzer_coef_0.6",
+    0.8940468362472096
+  ],
+  "lines_covered": [
+    "PartialFuzzer_coef_0.2",
+    619.6
+  ],
+  "percent_covered": [
+    "PartialFuzzer_coef_0.2",
+    0.7367419738406659
+  ],
+  "unique_paths": [
+    "TotalFuzzer_coef_0.1",
+    17.2
+  ],
+  "unique_transitions": [
+    "TotalFuzzer_coef_1.0",
+    2335.6
+  ]
+}

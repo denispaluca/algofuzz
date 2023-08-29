@@ -1,0 +1,200 @@
+{
+  "PartialFuzzer_coef_0.0": {
+    "call_count": 7648.2,
+    "rejected_calls": 5782.2,
+    "percentage_rejected": 0.755924069630391,
+    "lines_covered": 606.8,
+    "percent_covered": 0.7215219976218787,
+    "unique_paths": 14.4,
+    "unique_transitions": 1723.2
+  },
+  "PartialFuzzer_coef_0.1": {
+    "call_count": 7203.4,
+    "rejected_calls": 5486.6,
+    "percentage_rejected": 0.7616994499477995,
+    "lines_covered": 606.8,
+    "percent_covered": 0.7215219976218786,
+    "unique_paths": 14.0,
+    "unique_transitions": 1587.4
+  },
+  "PartialFuzzer_coef_0.2": {
+    "call_count": 6736.8,
+    "rejected_calls": 5084.8,
+    "percentage_rejected": 0.7547932455443203,
+    "lines_covered": 619.6,
+    "percent_covered": 0.7367419738406659,
+    "unique_paths": 16.4,
+    "unique_transitions": 1530.6
+  },
+  "PartialFuzzer_coef_0.3": {
+    "call_count": 6385.6,
+    "rejected_calls": 4823.4,
+    "percentage_rejected": 0.7553911794650296,
+    "lines_covered": 605.4,
+    "percent_covered": 0.7198573127229488,
+    "unique_paths": 14.4,
+    "unique_transitions": 1434.6
+  },
+  "PartialFuzzer_coef_0.4": {
+    "call_count": 6060.8,
+    "rejected_calls": 4560.0,
+    "percentage_rejected": 0.7523331404329952,
+    "lines_covered": 602.4,
+    "percent_covered": 0.7162901307966706,
+    "unique_paths": 13.8,
+    "unique_transitions": 1388.0
+  },
+  "PartialFuzzer_coef_0.5": {
+    "call_count": 5783.2,
+    "rejected_calls": 4372.4,
+    "percentage_rejected": 0.7560901539417832,
+    "lines_covered": 612.8,
+    "percent_covered": 0.7286563614744351,
+    "unique_paths": 15.0,
+    "unique_transitions": 1301.2
+  },
+  "PartialFuzzer_coef_0.6": {
+    "call_count": 5547.6,
+    "rejected_calls": 4209.2,
+    "percentage_rejected": 0.7585707649175618,
+    "lines_covered": 607.6,
+    "percent_covered": 0.722473246135553,
+    "unique_paths": 14.0,
+    "unique_transitions": 1227.2
+  },
+  "PartialFuzzer_coef_0.7": {
+    "call_count": 5304.0,
+    "rejected_calls": 4030.4,
+    "percentage_rejected": 0.7598851813291111,
+    "lines_covered": 599.4,
+    "percent_covered": 0.7127229488703923,
+    "unique_paths": 13.6,
+    "unique_transitions": 1172.0
+  },
+  "PartialFuzzer_coef_0.8": {
+    "call_count": 5050.0,
+    "rejected_calls": 3826.8,
+    "percentage_rejected": 0.7577961834613639,
+    "lines_covered": 603.0,
+    "percent_covered": 0.7170035671819261,
+    "unique_paths": 13.6,
+    "unique_transitions": 1131.6
+  },
+  "PartialFuzzer_coef_0.9": {
+    "call_count": 4843.4,
+    "rejected_calls": 3626.2,
+    "percentage_rejected": 0.7487315625735238,
+    "lines_covered": 603.8,
+    "percent_covered": 0.7179548156956004,
+    "unique_paths": 13.8,
+    "unique_transitions": 1126.8
+  },
+  "PartialFuzzer_coef_1.0": {
+    "call_count": 4615.6,
+    "rejected_calls": 3500.8,
+    "percentage_rejected": 0.7584603954678412,
+    "lines_covered": 601.6,
+    "percent_covered": 0.7153388822829964,
+    "unique_paths": 13.8,
+    "unique_transitions": 1028.8
+  },
+  "TotalFuzzer_coef_0.0": {
+    "call_count": 4415.0,
+    "rejected_calls": 3893.2,
+    "percentage_rejected": 0.8817640524049475,
+    "lines_covered": 605.0,
+    "percent_covered": 0.7193816884661117,
+    "unique_paths": 17.0,
+    "unique_transitions": 482.4
+  },
+  "TotalFuzzer_coef_0.1": {
+    "call_count": 4202.2,
+    "rejected_calls": 3637.2,
+    "percentage_rejected": 0.8654341866975294,
+    "lines_covered": 607.4,
+    "percent_covered": 0.7222354340071343,
+    "unique_paths": 17.2,
+    "unique_transitions": 522.4
+  },
+  "TotalFuzzer_coef_0.2": {
+    "call_count": 4174.6,
+    "rejected_calls": 3722.6,
+    "percentage_rejected": 0.8912092425377438,
+    "lines_covered": 563.6,
+    "percent_covered": 0.6701545778834721,
+    "unique_paths": 14.4,
+    "unique_transitions": 409.4
+  },
+  "TotalFuzzer_coef_0.3": {
+    "call_count": 4011.2,
+    "rejected_calls": 3558.0,
+    "percentage_rejected": 0.8869090457580807,
+    "lines_covered": 596.0,
+    "percent_covered": 0.7086801426872771,
+    "unique_paths": 15.6,
+    "unique_transitions": 409.4
+  },
+  "TotalFuzzer_coef_0.4": {
+    "call_count": 3863.0,
+    "rejected_calls": 3348.2,
+    "percentage_rejected": 0.8662906499855773,
+    "lines_covered": 600.6,
+    "percent_covered": 0.7141498216409037,
+    "unique_paths": 16.0,
+    "unique_transitions": 467.6
+  },
+  "TotalFuzzer_coef_0.5": {
+    "call_count": 3788.2,
+    "rejected_calls": 3332.2,
+    "percentage_rejected": 0.8795865902587134,
+    "lines_covered": 543.6,
+    "percent_covered": 0.6463733650416171,
+    "unique_paths": 14.8,
+    "unique_transitions": 404.0
+  },
+  "TotalFuzzer_coef_0.6": {
+    "call_count": 3722.2,
+    "rejected_calls": 3328.0,
+    "percentage_rejected": 0.8940468362472096,
+    "lines_covered": 550.6,
+    "percent_covered": 0.6546967895362663,
+    "unique_paths": 13.0,
+    "unique_transitions": 343.4
+  },
+  "TotalFuzzer_coef_0.7": {
+    "call_count": 3562.6,
+    "rejected_calls": 3074.8,
+    "percentage_rejected": 0.8629555141215952,
+    "lines_covered": 518.0,
+    "percent_covered": 0.6159334126040428,
+    "unique_paths": 13.2,
+    "unique_transitions": 427.4
+  },
+  "TotalFuzzer_coef_0.8": {
+    "call_count": 3467.6,
+    "rejected_calls": 2969.2,
+    "percentage_rejected": 0.8561515049184297,
+    "lines_covered": 521.2,
+    "percent_covered": 0.6197384066587396,
+    "unique_paths": 12.2,
+    "unique_transitions": 433.8
+  },
+  "TotalFuzzer_coef_0.9": {
+    "call_count": 3367.0,
+    "rejected_calls": 2763.0,
+    "percentage_rejected": 0.8202850659529858,
+    "lines_covered": 509.6,
+    "percent_covered": 0.6059453032104638,
+    "unique_paths": 12.4,
+    "unique_transitions": 528.6
+  },
+  "TotalFuzzer_coef_1.0": {
+    "call_count": 2721.8,
+    "rejected_calls": 380.8,
+    "percentage_rejected": 0.13983871392407785,
+    "lines_covered": 511.2,
+    "percent_covered": 0.6078478002378122,
+    "unique_paths": 12.0,
+    "unique_transitions": 2335.6
+  }
+}
