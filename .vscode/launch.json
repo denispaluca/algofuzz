@@ -24,7 +24,10 @@
                 "2",
                 "0",
                 "0",
-                "0"
+                "0",
+                "-a",
+                "--timeout",
+                "5"
             ],
             "console": "integratedTerminal",
             "justMyCode": true

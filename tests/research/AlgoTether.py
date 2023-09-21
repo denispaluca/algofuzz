@@ -251,8 +251,8 @@ def eval(address: str, state: ContractState) -> bool:
 Execution
 """
 def main():
-    fuzzer = PartialFuzzer(FuzzAppClient.from_compiled(*compile()))
-    n = fuzzer.start(runs=1000, driver=Driver.COVERAGE)
+    fuzzer = TotalFuzzer(FuzzAppClient.from_compiled(*compile()))
+    n = fuzzer.start(timeout_seconds=5 * 60, driver=Driver.STATE)
 
 
 if(__name__ == "__main__"):

@@ -6,11 +6,13 @@ authors = ["Denis Paluca <denispaluca@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.13"
 algokit-utils = "^1.2.0"
 pyteal = "^0.25.0"
 py-algorand-sdk = "^2.3.0"
 python-dotenv = "^1.0.0"
+pandas = "^2.1.1"
+matplotlib = "^3.8.0"
 
 
 [build-system]
