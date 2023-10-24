@@ -1,8 +1,11 @@
 # AlgoFuzz
+![AlgoFuzz-logo](https://github.com/denispaluca/algofuzz/assets/25372894/96fe9a88-02a9-4303-b83f-a955d1dd47a0)
+
 AlgoFuzz is a property-based fuzzing tool for Algorand smart contracts. The tool itself is a prototype written in python. Users are expected to modify and run the source code directly to be able to test it.
 
 ## Prerequisites
 - [Python 3.10 or higher](https://www.python.org/downloads/)
+
 - [AlgoKit](https://developer.algorand.org/docs/get-started/algokit/) and its dependencies
 - [Python Poetry](https://python-poetry.org/)
 
